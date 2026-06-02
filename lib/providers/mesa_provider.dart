@@ -5,24 +5,38 @@ class MesaProvider extends ChangeNotifier {
   final List<Mesa> _mesas = [];
   bool _cargando = true;
 
-  List<Mesa> get mesas          => _mesas;
-  bool get cargando             => _cargando;
-  int get libres                => _mesas.where((m) => m.estado == 'libre').length;
-  int get ocupadas              => _mesas.where((m) => m.estado == 'ocupada').length;
-  int get cuenta                => _mesas.where((m) => m.estado == 'esperando_cuenta').length;
-  int get esperandoCuenta       => cuenta;
+  List<Mesa> get mesas         => _mesas;
+  bool       get cargando      => _cargando;
+  int        get libres        => _mesas.where((m) => m.estado == 'libre').length;
+  int        get ocupadas      => _mesas.where((m) => m.estado == 'ocupada').length;
+  int        get cuenta        => _mesas.where((m) => m.estado == 'esperando_cuenta').length;
+  int        get esperandoCuenta => cuenta;
 
   MesaProvider() {
-    crearMesasIniciales(10);
+    _inicializar();
+  }
+
+  void _inicializar() {
+    if (_mesas.isEmpty) {
+      for (int i = 1; i <= 10; i++) {
+        _mesas.add(Mesa(
+          id:        'm$i',
+          numero:    i,
+          capacidad: i <= 2 ? 2 : (i <= 6 ? 4 : 6),
+        ));
+      }
+    }
+    _cargando = false;
+    notifyListeners();
   }
 
   void crearMesasIniciales(int cantidad) {
     if (_mesas.isNotEmpty) return;
     for (int i = 1; i <= cantidad; i++) {
       _mesas.add(Mesa(
-        id: 'm$i',
-        numero: i,
-        capacidad: i <= 2 ? 2 : (i <= 6 ? 4 : 6),
+        id:        'm$i',
+        numero:    i,
+        capacidad: i <= 2 ? 2 : 4,
       ));
     }
     _cargando = false;
@@ -32,14 +46,14 @@ class MesaProvider extends ChangeNotifier {
   void actualizarEstado(String id, String estado,
       {String clienteNombre = '', String? ordenId}) {
     final mesa = _mesas.firstWhere((m) => m.id == id);
-    mesa.estado = estado;
+    mesa.estado        = estado;
     mesa.clienteNombre = clienteNombre;
     notifyListeners();
   }
 
   void liberarMesa(String id) {
     final mesa = _mesas.firstWhere((m) => m.id == id);
-    mesa.estado = 'libre';
+    mesa.estado        = 'libre';
     mesa.clienteNombre = '';
     notifyListeners();
   }

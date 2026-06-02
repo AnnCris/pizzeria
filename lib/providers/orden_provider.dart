@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/pizza.dart';
 import '../models/orden.dart';
-import '../services/notification_service.dart';
 
 class OrdenProvider extends ChangeNotifier {
   final List<ItemOrden> _carrito = [];
   final List<Orden>     _ordenes = [];
-  final _uuid  = const Uuid();
-  final _notif = NotificationService();
+  final _uuid = const Uuid();
   String _mesa = '';
 
   List<ItemOrden> get carrito  => _carrito;
@@ -17,7 +15,10 @@ class OrdenProvider extends ChangeNotifier {
   double get totalCarrito      =>
       _carrito.fold(0, (s, i) => s + i.subtotal);
 
-  void setMesa(String mesa) { _mesa = mesa; notifyListeners(); }
+  void setMesa(String mesa) {
+    _mesa = mesa;
+    notifyListeners();
+  }
 
   void agregarAlCarrito(Pizza pizza, TamanoPizza tamano) {
     final key   = '${pizza.id}_${tamano.nombre}';
@@ -58,14 +59,6 @@ class OrdenProvider extends ChangeNotifier {
     _ordenes.add(orden);
     _carrito.clear();
     notifyListeners();
-
-    // ── Disparar notificación de nueva orden ─────────────────────────────
-    await _notif.nuevaOrden(
-      ordenId:    orden.id,
-      mesa:       orden.mesa,
-      totalItems: orden.items.fold(0, (s, i) => s + i.cantidad),
-    );
-
     return orden;
   }
 
@@ -73,11 +66,6 @@ class OrdenProvider extends ChangeNotifier {
     final o = _ordenes.firstWhere((o) => o.id == ordenId);
     o.estado = estado;
     notifyListeners();
-
-    // ── Notificar cuando la orden está lista ─────────────────────────────
-    if (estado == 'lista') {
-      await _notif.ordenLista(ordenId: ordenId, mesa: o.mesa);
-    }
   }
 
   int cantidadEnCarrito(String pizzaId, String tamano) {
