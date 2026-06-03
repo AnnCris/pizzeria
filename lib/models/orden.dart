@@ -1,12 +1,9 @@
-// ACTUALIZACIÓN de lib/models/orden.dart
-// Agrega el campo "notas" a ItemOrden
-
 class ItemOrden {
   final String pizzaId;
   final String nombre;
   final double precio;
   final String tamano;
-  String notas; // ← NUEVO
+  String notas;
   int cantidad;
 
   ItemOrden({
@@ -22,12 +19,13 @@ class ItemOrden {
 }
 
 class Orden {
-  final String id;
+  final String id;           // ID corto legible: "A3F8C2D1"
+  final String firestoreId;  // ID real de Firestore para updates
   final String mesa;
   final DateTime hora;
   final List<ItemOrden> items;
   String estado;
-  String notasGenerales; // ← NUEVO: nota global de la orden
+  String notasGenerales;
 
   Orden({
     required this.id,
@@ -36,6 +34,7 @@ class Orden {
     required this.items,
     this.estado = 'pendiente',
     this.notasGenerales = '',
+    this.firestoreId = '',
   });
 
   double get total => items.fold(0, (s, i) => s + i.subtotal);

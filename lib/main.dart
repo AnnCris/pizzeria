@@ -9,12 +9,9 @@ import 'screens/menu_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Firebase DEBE inicializarse antes de cualquier provider
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
   runApp(
     MultiProvider(
       providers: [
@@ -39,7 +36,7 @@ class PizzeriaApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
         useMaterial3: true,
       ),
-      home: const MenuScreen(),
+      home: const MenuScreen(), // El cliente siempre ve el menú primero
     );
   }
 }

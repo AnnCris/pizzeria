@@ -1,156 +1,259 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../providers/orden_provider.dart';
+import '../models/orden.dart';
+import '../services/orden_service.dart';
 
-// Esta pantalla la ve el CLIENTE para seguir su orden en tiempo real
+// El cliente ve esta pantalla para seguir su orden en tiempo real.
+// Recibe el firestoreId (doc ID real de Firestore) para hacer el stream.
 class EstadoPedidoScreen extends StatelessWidget {
-  final String ordenId;
-  const EstadoPedidoScreen({super.key, required this.ordenId});
+  final String firestoreId;
+  const EstadoPedidoScreen({super.key, required this.firestoreId});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<OrdenProvider>();
-    final orden = provider.ordenes
-        .where((o) => o.id == ordenId)
-        .firstOrNull;
-
-    if (orden == null) {
-      return Scaffold(
-        appBar: AppBar(backgroundColor: Colors.red[800],
-            iconTheme: const IconThemeData(color: Colors.white),
-            title: const Text('Estado del pedido',
-                style: TextStyle(color: Colors.white))),
-        body: const Center(child: Text('Orden no encontrada')),
-      );
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F0),
       appBar: AppBar(
         backgroundColor: Colors.red[800],
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('📍 Estado de tu pedido',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: TextStyle(color: Colors.white,
+                fontWeight: FontWeight.bold)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(children: [
+      // StreamBuilder directo a Firestore — actualización en tiempo real
+      body: StreamBuilder<Orden?>(
+        stream: OrdenService.streamOrden(firestoreId),
+        builder: (context, snap) {
+          // Cargando
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(
+                child: CircularProgressIndicator(color: Colors.red));
+          }
 
-          // ── Número de orden ──────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.red[800]!, Colors.red[600]!]),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(children: [
-              const Text('Tu orden',
-                  style: TextStyle(color: Colors.white70, fontSize: 14)),
-              const SizedBox(height: 4),
-              Text('# ${orden.id}',
-                  style: const TextStyle(color: Colors.white, fontSize: 28,
-                      fontWeight: FontWeight.bold, letterSpacing: 2)),
-              const SizedBox(height: 4),
-              Text(orden.mesa,
-                  style: const TextStyle(color: Colors.white70)),
-              Text(DateFormat('HH:mm').format(orden.hora),
-                  style: const TextStyle(color: Colors.white54, fontSize: 12)),
-            ]),
-          ),
-          const SizedBox(height: 28),
-
-          // ── Stepper de estado ────────────────────────────────────
-          _EstadoStepper(estado: orden.estado),
-          const SizedBox(height: 28),
-
-          // ── Resumen de items ─────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
-            ),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('🍕 Tu pedido',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
-              ...orden.items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(children: [
-                  Container(
-                    width: 36, height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.red[50], shape: BoxShape.circle),
-                    child: Center(
-                      child: Text('×${item.cantidad}',
-                          style: TextStyle(color: Colors.red[700],
-                              fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text(item.nombre,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(item.tamano,
-                        style: const TextStyle(color: Colors.grey,
-                            fontSize: 12)),
-                    if (item.notas.isNotEmpty)
-                      Text('📝 ${item.notas}',
-                          style: TextStyle(color: Colors.amber[700],
-                              fontSize: 11, fontStyle: FontStyle.italic)),
-                  ])),
-                  Text('Bs. ${item.subtotal.toStringAsFixed(2)}',
-                      style: TextStyle(color: Colors.red[800],
-                          fontWeight: FontWeight.bold)),
-                ]),
-              )),
-              const Divider(),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Error de conexión
+          if (snap.hasError) {
+            return Center(child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                const Text('Total',
-                    style: TextStyle(fontSize: 16,
-                        fontWeight: FontWeight.bold)),
-                Text('Bs. ${orden.total.toStringAsFixed(2)}',
-                    style: TextStyle(fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red[800])),
+                const Text('⚠️', style: TextStyle(fontSize: 48)),
+                const SizedBox(height: 12),
+                Text('Error al conectar: ${snap.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.grey)),
               ]),
-            ]),
-          ),
+            ));
+          }
 
-          // ── Nota general ─────────────────────────────────────────
-          if (orden.notasGenerales.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.amber[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.shade300),
-              ),
-              child: Row(children: [
-                const Text('📝 ', style: TextStyle(fontSize: 20)),
-                const SizedBox(width: 8),
-                Expanded(child: Text(orden.notasGenerales,
-                    style: TextStyle(color: Colors.amber[800]))),
+          // Orden no encontrada
+          final orden = snap.data;
+          if (orden == null) {
+            return const Center(
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                Text('🔍', style: TextStyle(fontSize: 48)),
+                SizedBox(height: 12),
+                Text('Orden no encontrada',
+                    style: TextStyle(fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('Es posible que ya haya sido entregada.',
+                    style: TextStyle(color: Colors.grey)),
               ]),
-            ),
-          ],
-        ]),
+            );
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(children: [
+
+              // ── Número de orden ──────────────────────────────────
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: [Colors.red[800]!, Colors.red[600]!]),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(children: [
+                  const Text('Tu orden',
+                      style: TextStyle(
+                          color: Colors.white70, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text('# ${orden.id}',
+                      style: const TextStyle(color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2)),
+                  const SizedBox(height: 4),
+                  Text(orden.mesa,
+                      style: const TextStyle(color: Colors.white70)),
+                  Text(DateFormat('HH:mm').format(orden.hora),
+                      style: const TextStyle(
+                          color: Colors.white54, fontSize: 12)),
+                ]),
+              ),
+              const SizedBox(height: 28),
+
+              // ── Stepper de estado ────────────────────────────────
+              _EstadoStepper(estado: orden.estado),
+              const SizedBox(height: 28),
+
+              // ── Resumen de items ─────────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [const BoxShadow(
+                      color: Colors.black12, blurRadius: 8)],
+                ),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  const Text('🍕 Tu pedido',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 12),
+                  ...orden.items.map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(children: [
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            shape: BoxShape.circle),
+                        child: Center(
+                          child: Text('×${item.cantidad}',
+                              style: TextStyle(
+                                  color: Colors.red[700],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text(item.nombre, style: const TextStyle(
+                            fontWeight: FontWeight.w600)),
+                        Text(item.tamano,
+                            style: const TextStyle(
+                                color: Colors.grey, fontSize: 12)),
+                        if (item.notas.isNotEmpty)
+                          Text('📝 ${item.notas}',
+                              style: TextStyle(
+                                  color: Colors.amber[700],
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic)),
+                      ])),
+                      Text(
+                          'Bs. ${item.subtotal.toStringAsFixed(2)}',
+                          style: TextStyle(
+                              color: Colors.red[800],
+                              fontWeight: FontWeight.bold)),
+                    ]),
+                  )),
+                  const Divider(),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                    const Text('Total',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('Bs. ${orden.total.toStringAsFixed(2)}',
+                        style: TextStyle(fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red[800])),
+                  ]),
+                ]),
+              ),
+
+              // Nota general
+              if (orden.notasGenerales.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.shade300),
+                  ),
+                  child: Row(children: [
+                    const Text('📝 ',
+                        style: TextStyle(fontSize: 20)),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(orden.notasGenerales,
+                        style: TextStyle(
+                            color: Colors.amber[800]))),
+                  ]),
+                ),
+              ],
+
+              const SizedBox(height: 20),
+
+              // Mensaje según estado
+              if (orden.estado == 'lista')
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(16),
+                    border:
+                        Border.all(color: Colors.green.shade300),
+                  ),
+                  child: const Column(children: [
+                    Text('🎉', style: TextStyle(fontSize: 36)),
+                    SizedBox(height: 8),
+                    Text('¡Tu pizza está lista!',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green)),
+                    SizedBox(height: 4),
+                    Text('El mesero te la llevará en un momento.',
+                        style: TextStyle(color: Colors.grey)),
+                  ]),
+                ),
+
+              if (orden.estado == 'entregada')
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.teal[50],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.teal.shade300),
+                  ),
+                  child: const Column(children: [
+                    Text('😊', style: TextStyle(fontSize: 36)),
+                    SizedBox(height: 8),
+                    Text('¡Buen provecho!',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal)),
+                    SizedBox(height: 4),
+                    Text('Gracias por visitarnos.',
+                        style: TextStyle(color: Colors.grey)),
+                  ]),
+                ),
+            ]),
+          );
+        },
       ),
     );
   }
 }
 
-// ── Stepper visual de estado ──────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+// Stepper visual
+// ════════════════════════════════════════════════════════════════════════════
 
 class _EstadoStepper extends StatelessWidget {
   final String estado;
@@ -169,10 +272,14 @@ class _EstadoStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pasos = [
-      _PasoData(emoji: '📋', label: 'Recibida',    sublabel: 'Tu orden llegó a cocina'),
-      _PasoData(emoji: '🔥', label: 'Preparando',  sublabel: 'Estamos haciendo tu pizza'),
-      _PasoData(emoji: '✅', label: 'Lista',        sublabel: 'Listo para entregar'),
-      _PasoData(emoji: '🎉', label: '¡Disfruta!',  sublabel: 'Tu pizza fue entregada'),
+      _PasoData(emoji: '📋', label: 'Recibida',
+          sublabel: 'Tu orden llegó a cocina'),
+      _PasoData(emoji: '🔥', label: 'Preparando',
+          sublabel: 'Estamos haciendo tu pizza'),
+      _PasoData(emoji: '✅', label: 'Lista',
+          sublabel: 'Lista para entregar'),
+      _PasoData(emoji: '🎉', label: '¡Disfruta!',
+          sublabel: 'Tu pizza fue entregada'),
     ];
 
     return Container(
@@ -180,19 +287,20 @@ class _EstadoStepper extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+        boxShadow: [
+          const BoxShadow(color: Colors.black12, blurRadius: 8)],
       ),
       child: Column(
         children: pasos.asMap().entries.map((entry) {
-          final i    = entry.key;
-          final paso = entry.value;
-          final activo    = i == _paso;
+          final i          = entry.key;
+          final paso       = entry.value;
+          final activo     = i == _paso;
           final completado = i < _paso;
-          final isLast    = i == pasos.length - 1;
+          final isLast     = i == pasos.length - 1;
 
           return Column(children: [
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              // Círculo de estado
+            Row(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               Column(children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 400),
@@ -213,15 +321,18 @@ class _EstadoStepper extends StatelessWidget {
                       width: 2,
                     ),
                     boxShadow: activo
-                        ? [BoxShadow(color: Colors.red.withValues(alpha: 0.3),
-                              blurRadius: 12)]
+                        ? [BoxShadow(
+                            color: Colors.red
+                                .withValues(alpha: 0.3),
+                            blurRadius: 12)]
                         : [],
                   ),
                   child: Center(
                     child: completado
-                        ? const Icon(Icons.check, color: Colors.white, size: 22)
+                        ? const Icon(Icons.check,
+                            color: Colors.white, size: 22)
                         : Text(paso.emoji,
-                              style: const TextStyle(fontSize: 22)),
+                            style: const TextStyle(fontSize: 22)),
                   ),
                 ),
                 if (!isLast)
@@ -237,7 +348,6 @@ class _EstadoStepper extends StatelessWidget {
                   ),
               ]),
               const SizedBox(width: 16),
-              // Texto
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 10),
@@ -259,13 +369,13 @@ class _EstadoStepper extends StatelessWidget {
                     if (activo) ...[
                       const SizedBox(height: 2),
                       Text(paso.sublabel,
-                          style: TextStyle(color: Colors.grey[600],
+                          style: TextStyle(
+                              color: Colors.grey[600],
                               fontSize: 12)),
                     ],
                   ]),
                 ),
               ),
-              // Indicador pulsante si está activo
               if (activo)
                 Padding(
                   padding: const EdgeInsets.only(top: 14),
@@ -282,7 +392,9 @@ class _EstadoStepper extends StatelessWidget {
 class _PasoData {
   final String emoji, label, sublabel;
   const _PasoData(
-      {required this.emoji, required this.label, required this.sublabel});
+      {required this.emoji,
+      required this.label,
+      required this.sublabel});
 }
 
 class _PulseDot extends StatefulWidget {
@@ -305,7 +417,10 @@ class _PulseDotState extends State<_PulseDot>
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(

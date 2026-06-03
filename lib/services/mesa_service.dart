@@ -11,9 +11,17 @@ class MesaService {
               .map((d) => Mesa.fromFirestore(d.data(), d.id))
               .toList());
 
-  static Future<void> crear(int numero, int capacidad) =>
-      _db.collection(_col).add(
-          Mesa(id: '', numero: numero, capacidad: capacidad).toMap());
+  static Future<void> crear(int numero, int capacidad,
+      {bool esEvento = false, String? etiqueta}) =>
+      _db.collection(_col).add({
+        'numero':        numero,
+        'estado':        'libre',
+        'clienteNombre': '',
+        'capacidad':     capacidad,
+        'ordenId':       null,
+        'esEvento':      esEvento,
+        'etiqueta':      etiqueta ?? '',
+      });
 
   static Future<void> actualizar(String id, Map<String, dynamic> data) =>
       _db.collection(_col).doc(id).update(data);
@@ -23,19 +31,26 @@ class MesaService {
 
   static Future<void> liberarMesa(String id) =>
       _db.collection(_col).doc(id).update({
-        'estado': 'libre',
+        'estado':        'libre',
         'clienteNombre': '',
-        'ordenId': null,
+        'ordenId':       null,
       });
 
   static Future<void> crearMesasIniciales(int n) async {
     final snap = await _db.collection(_col).limit(1).get();
-    if (snap.docs.isNotEmpty) return;
+    if (snap.docs.isNotEmpty) return; // ya existen
     final batch = _db.batch();
     for (int i = 1; i <= n; i++) {
       final ref = _db.collection(_col).doc();
-      batch.set(ref,
-          Mesa(id: '', numero: i, capacidad: i <= 2 ? 2 : 4).toMap());
+      batch.set(ref, {
+        'numero':        i,
+        'estado':        'libre',
+        'clienteNombre': '',
+        'capacidad':     i <= 2 ? 2 : 4,
+        'ordenId':       null,
+        'esEvento':      false,
+        'etiqueta':      '',
+      });
     }
     await batch.commit();
   }

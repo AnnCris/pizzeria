@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/mesa.dart';
+import '../services/mesa_service.dart';
 
 class MesaProvider extends ChangeNotifier {
   final List<Mesa> _mesas = [];
@@ -13,59 +14,62 @@ class MesaProvider extends ChangeNotifier {
   int        get esperandoCuenta => cuenta;
 
   MesaProvider() {
-    _inicializar();
+    _escucharFirestore();
   }
 
-  void _inicializar() {
-    if (_mesas.isEmpty) {
-      for (int i = 1; i <= 10; i++) {
-        _mesas.add(Mesa(
-          id:        'm$i',
-          numero:    i,
-          capacidad: i <= 2 ? 2 : (i <= 6 ? 4 : 6),
-        ));
-      }
-    }
-    _cargando = false;
-    notifyListeners();
+  // Escucha en tiempo real desde Firestore
+  void _escucharFirestore() {
+    MesaService.stream().listen((mesas) {
+      _mesas
+        ..clear()
+        ..addAll(mesas);
+      _cargando = false;
+      notifyListeners();
+    }, onError: (_) {
+      _cargando = false;
+      notifyListeners();
+    });
   }
 
-  void crearMesasIniciales(int cantidad) {
-    if (_mesas.isNotEmpty) return;
-    for (int i = 1; i <= cantidad; i++) {
-      _mesas.add(Mesa(
-        id:        'm$i',
-        numero:    i,
-        capacidad: i <= 2 ? 2 : 4,
-      ));
-    }
-    _cargando = false;
-    notifyListeners();
+  // Solo llama si Firestore está vacío
+  Future<void> crearMesasIniciales(int cantidad) async {
+    await MesaService.crearMesasIniciales(cantidad);
   }
 
-  void actualizarEstado(String id, String estado,
-      {String clienteNombre = '', String? ordenId}) {
-    final mesa = _mesas.firstWhere((m) => m.id == id);
-    mesa.estado        = estado;
-    mesa.clienteNombre = clienteNombre;
-    notifyListeners();
+  Future<void> actualizarEstado(String id, String estado,
+      {String clienteNombre = '', String? ordenId}) async {
+    await MesaService.actualizar(id, {
+      'estado': estado,
+      'clienteNombre': clienteNombre,
+      'ordenId': ordenId,
+    });
   }
 
-  void liberarMesa(String id) {
-    final mesa = _mesas.firstWhere((m) => m.id == id);
-    mesa.estado        = 'libre';
-    mesa.clienteNombre = '';
-    notifyListeners();
+  Future<void> liberarMesa(String id) async {
+    await MesaService.actualizar(id, {
+      'estado': 'libre',
+      'clienteNombre': '',
+      'ordenId': null,
+    });
   }
 
-  void agregarMesa(int numero, int capacidad) {
-    final id = 'm${DateTime.now().millisecondsSinceEpoch}';
-    _mesas.add(Mesa(id: id, numero: numero, capacidad: capacidad));
-    notifyListeners();
+  Future<void> agregarMesa(int numero, int capacidad,
+      {bool esEvento = false, String? etiqueta}) async {
+    await MesaService.crear(numero, capacidad,
+        esEvento: esEvento, etiqueta: etiqueta);
   }
 
-  void eliminarMesa(String id) {
-    _mesas.removeWhere((m) => m.id == id);
-    notifyListeners();
+  Future<void> editarMesa(String id, int numero, int capacidad,
+      {bool esEvento = false, String? etiqueta}) async {
+    await MesaService.actualizar(id, {
+      'numero': numero,
+      'capacidad': capacidad,
+      'esEvento': esEvento,
+      'etiqueta': etiqueta ?? '',
+    });
+  }
+
+  Future<void> eliminarMesa(String id) async {
+    await MesaService.eliminar(id);
   }
 }

@@ -14,6 +14,7 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
+    // Mientras Firebase verifica la sesión
     if (auth.cargando) {
       return Scaffold(
         backgroundColor: Colors.red[800],
@@ -31,13 +32,21 @@ class SplashScreen extends StatelessWidget {
       );
     }
 
-    if (!auth.isLoggedIn) return const LoginScreen();
+    // Sin sesión → pantalla de login (NO al menú de cliente)
+    if (!auth.isLoggedIn) {
+      return const LoginScreen();
+    }
 
+    // Con sesión → redirigir según rol
     switch (auth.rol) {
-      case 'admin':  return const AdminScreen();
-      case 'cocina': return const CocinaScreen();
-      case 'cajero': return const CajeroScreen();
-      default:       return const MenuScreen();
+      case 'admin':
+        return const AdminScreen();
+      case 'cocina':
+        return const CocinaScreen();
+      case 'cajero':
+        return const CajeroScreen();
+      default:
+        return const MenuScreen();
     }
   }
 }
