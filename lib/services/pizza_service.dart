@@ -56,15 +56,18 @@ class PizzaService {
   static final _db  = FirebaseFirestore.instance;
   static const _col = 'pizzas';
 
-  // ── Stream en tiempo real ─────────────────────────────────────────────
   static Stream<List<PizzaDB>> stream() {
     return _db
         .collection(_col)
         .where('activo', isEqualTo: true)
-        .orderBy('categoria')
+        // Sin .orderBy() aquí → no necesita índice compuesto
         .snapshots()
-        .map((s) => s.docs.map(PizzaDB.fromFirestore).toList())
-        .handleError((e) => <PizzaDB>[]);
+        .map((s) {
+          final lista = s.docs.map(PizzaDB.fromFirestore).toList();
+          // Ordenar por categoría en memoria
+          lista.sort((a, b) => a.categoria.compareTo(b.categoria));
+          return lista;
+        });
   }
 
   // ── Crear ─────────────────────────────────────────────────────────────
@@ -104,7 +107,6 @@ class PizzaService {
       if (snap.docs.isNotEmpty) {
         return 'Ya existen pizzas en Firebase';
       }
-      // Subir en lotes de 10 para evitar límites de Firestore
       final lotes = <List<Pizza>>[];
       for (int i = 0; i < menuPizzas.length; i += 10) {
         lotes.add(menuPizzas.skip(i).take(10).toList());
@@ -124,7 +126,7 @@ class PizzaService {
         }
         await batch.commit();
       }
-      return null; // éxito
+      return null;
     } catch (e) {
       return _mensajeError(e);
     }
@@ -144,6 +146,9 @@ class PizzaService {
     }
     if (msg.contains('unauthenticated')) {
       return 'Sesión expirada. Vuelve a iniciar sesión.';
+    }
+    if (msg.contains('failed-precondition') || msg.contains('index')) {
+      return 'Falta un índice en Firestore. Revisa la consola de Firebase.';
     }
     return 'Error: ${e.toString().split(']').last.trim()}';
   }

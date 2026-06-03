@@ -281,10 +281,6 @@ class PizzasAdminScreen extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Card de pizza
-// ════════════════════════════════════════════════════════════════════════════
-
 class _PizzaAdminCard extends StatelessWidget {
   final PizzaDB pizza;
   final VoidCallback onEditar, onEliminar;
@@ -384,10 +380,6 @@ class _PizzaAdminCard extends StatelessWidget {
         ]),
       );
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets helper
-// ════════════════════════════════════════════════════════════════════════════
 
 class _Campo extends StatelessWidget {
   final TextEditingController ctrl;
