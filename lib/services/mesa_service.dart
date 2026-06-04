@@ -23,7 +23,8 @@ class MesaService {
         'etiqueta':      etiqueta ?? '',
       });
 
-  static Future<void> actualizar(String id, Map<String, dynamic> data) =>
+  static Future<void> actualizar(
+      String id, Map<String, dynamic> data) =>
       _db.collection(_col).doc(id).update(data);
 
   static Future<void> eliminar(String id) =>
@@ -35,6 +36,27 @@ class MesaService {
         'clienteNombre': '',
         'ordenId':       null,
       });
+
+  // Marca una mesa como ocupada buscándola por número
+  // Útil cuando el provider aún no cargó las mesas
+  static Future<void> marcarOcupadaPorNumero(
+      int numero, String clienteNombre) async {
+    try {
+      final snap = await _db
+          .collection(_col)
+          .where('numero', isEqualTo: numero)
+          .limit(1)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        await snap.docs.first.reference.update({
+          'estado':        'ocupada',
+          'clienteNombre': clienteNombre,
+        });
+      }
+    } catch (_) {
+      // Si falla, ignorar — no bloquear al cliente
+    }
+  }
 
   static Future<void> crearMesasIniciales(int n) async {
     final snap = await _db.collection(_col).limit(1).get();

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/pizza.dart';
+import '../models/bebida.dart';
+import '../services/bebida_service.dart';
 import '../providers/orden_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mesa_provider.dart';
@@ -17,27 +19,44 @@ class MenuScreen extends StatefulWidget {
   State<MenuScreen> createState() => _MenuScreenState();
 }
 
-class _MenuScreenState extends State<MenuScreen> {
-  String _categoria = 'Todas';
-  final _mesaCtrl   = TextEditingController();
+class _MenuScreenState extends State<MenuScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabCtrl;
+  String _categoriaPizza  = 'Todas';
+  String _categoriaBebida = 'Todas';
+  final _mesaCtrl = TextEditingController();
 
-  final List<String> _categorias = [
+  final List<String> _categoriasPizza = [
     'Todas', 'Clásicas', 'Especiales', 'Vegana', 'Infantil', 'Premium'
   ];
+  final List<String> _categoriasBebida = [
+    'Todas', 'Gaseosas', 'Jugos', 'Cafés', 'Mates', 'Agua', 'Cervezas'
+  ];
 
-  List<Pizza> get _filtradas => _categoria == 'Todas'
+  List<Pizza> get _pizzasFiltradas => _categoriaPizza == 'Todas'
       ? menuPizzas
-      : menuPizzas.where((p) => p.categoria == _categoria).toList();
+      : menuPizzas
+          .where((p) => p.categoria == _categoriaPizza)
+          .toList();
 
   @override
   void initState() {
     super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.read<OrdenProvider>().mesa.isEmpty) _dialMesa();
     });
   }
 
-  // ── Diálogo de mesa ────────────────────────────────────────────
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  // ── Diálogo de mesa ───────────────────────────────────────────
+  final _nombreCtrl = TextEditingController();
+
   void _dialMesa() {
     showDialog(
       context: context,
@@ -47,79 +66,96 @@ class _MenuScreenState extends State<MenuScreen> {
             borderRadius: BorderRadius.circular(16)),
         title: const Row(children: [
           Text('🍕 ', style: TextStyle(fontSize: 24)),
-          Text('¿Cuál es tu mesa?',
-              style: TextStyle(fontSize: 18)),
+          Expanded(child: Text('Bienvenido',
+              style: TextStyle(fontSize: 20,
+                  fontWeight: FontWeight.bold))),
         ]),
-        content: TextField(
-          controller: _mesaCtrl,
-          keyboardType: TextInputType.number,
-          autofocus: true,
-          decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.table_restaurant),
-            hintText: 'Ej: 3',
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Ingresa el número de tu mesa y tu nombre'
+              ' para que podamos atenderte mejor.',
+              style: TextStyle(color: Colors.grey, fontSize: 13)),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _mesaCtrl,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Número de mesa *',
+              prefixIcon: const Icon(Icons.table_restaurant),
+              hintText: 'Ej: 3',
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
           ),
-        ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _nombreCtrl,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              labelText: 'Tu nombre (opcional)',
+              prefixIcon: const Icon(Icons.person_outline),
+              hintText: 'Ej: Ana',
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ]),
         actions: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red[700],
+              minimumSize: const Size(double.infinity, 46),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            // Sin async en el onPressed — delega al método del State
             onPressed: () {
               final numero = _mesaCtrl.text.trim();
               if (numero.isEmpty) return;
-              Navigator.pop(dialogCtx);          // cierra el diálogo
-              _confirmarMesa(numero);            // lógica async en State
+              Navigator.pop(dialogCtx);
+              _confirmarMesa(numero, _nombreCtrl.text.trim());
             },
-            child: const Text('Confirmar',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Confirmar y ver el menú',
+                style: TextStyle(color: Colors.white,
+                    fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  // Método del State — puede usar context y await sin warnings
-  Future<void> _confirmarMesa(String numero) async {
-    final mesaLabel = 'Mesa $numero';
-    context.read<OrdenProvider>().setMesa(mesaLabel);
+  Future<void> _confirmarMesa(String numero,
+      [String nombre = '']) async {
+    final mesaLabel    = 'Mesa $numero';
+    final clienteLabel = nombre.isNotEmpty ? nombre : 'Cliente';
 
-    final mp    = context.read<MesaProvider>();
-    final mesas = mp.mesas;
+    final ordenProv = context.read<OrdenProvider>();
+    final mp        = context.read<MesaProvider>();
 
-    String? mesaId;
+    // 1. Guardar en el provider local para el ticket
+    ordenProv.setMesa(mesaLabel);
+    ordenProv.setClienteNombre(clienteLabel);
+
+    // 2. Marcar ocupada en Firestore — el método busca por número
+    //    directamente en Firestore, no depende de que el provider
+    //    haya terminado de cargar
     try {
       final numInt = int.parse(numero);
-      final mesa   = mesas.firstWhere((m) => m.numero == numInt);
-      mesaId = mesa.id;
+      await mp.marcarOcupadaPorNumero(numInt, clienteLabel);
     } catch (_) {
-      // Mesa no registrada en Firestore — continúa sin marcar
-    }
-
-    if (mesaId != null) {
-      await mp.actualizarEstado(mesaId, 'ocupada');
+      // Si falla no bloqueamos al cliente
     }
   }
 
-  // ── Botón Personal → Login → Panel ────────────────────────────
   Future<void> _irAlLogin() async {
-    await Navigator.push(
-        context,
+    await Navigator.push(context,
         MaterialPageRoute(builder: (_) => const LoginScreen()));
     if (!mounted) return;
     final rol = context.read<AuthProvider>().rol;
     if (rol != null) _irAlPanel(context, rol);
   }
 
-  // ── Ir al panel según rol ──────────────────────────────────────
   void _irAlPanel(BuildContext ctx, String? rol) {
-    // Leer el rol SIEMPRE desde el provider en ese momento
     final rolActual = context.read<AuthProvider>().rol;
-
     Widget destino;
     switch (rolActual) {
       case 'admin':
@@ -132,15 +168,10 @@ class _MenuScreenState extends State<MenuScreen> {
         destino = const CajeroScreen();
         break;
       default:
-        // Si el rol es null o desconocido, mostrar aviso
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Rol no reconocido: "$rolActual". Verifica tu cuenta en Firebase.'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+          content: Text('Rol no reconocido: "$rolActual"'),
+          backgroundColor: Colors.red,
+        ));
         return;
     }
     Navigator.push(ctx, MaterialPageRoute(builder: (_) => destino));
@@ -175,8 +206,7 @@ class _MenuScreenState extends State<MenuScreen> {
         backgroundColor: Colors.red[800],
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start,
             children: [
           const Text('🍕 La Bella Pizzería',
               style: TextStyle(color: Colors.white,
@@ -212,7 +242,7 @@ class _MenuScreenState extends State<MenuScreen> {
               ),
           ]),
 
-          // Sin sesión → botón "Personal"
+          // Sin sesión → Personal
           if (!auth.isLoggedIn)
             TextButton.icon(
               onPressed: _irAlLogin,
@@ -222,8 +252,6 @@ class _MenuScreenState extends State<MenuScreen> {
                   style: TextStyle(
                       color: Colors.white60, fontSize: 12)),
             )
-
-          // Con sesión → popup con nombre + "Ir a mi panel"
           else
             PopupMenuButton<String>(
               child: Padding(
@@ -263,8 +291,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       children: [
                     Text(auth.nombre ?? '',
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15)),
+                            fontWeight: FontWeight.bold, fontSize: 15)),
                     Text(_rolLabel(auth.rol),
                         style: TextStyle(
                             color: Colors.grey[600], fontSize: 12)),
@@ -290,83 +317,134 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
               ],
             ),
-
           const SizedBox(width: 4),
+        ],
+
+        // ── Tabs Pizzas / Bebidas ──────────────────────────────
+        bottom: TabBar(
+          controller: _tabCtrl,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          indicatorWeight: 3,
+          tabs: const [
+            Tab(icon: Icon(Icons.local_pizza, size: 18), text: 'Pizzas'),
+            Tab(icon: Icon(Icons.local_drink, size: 18), text: 'Bebidas'),
+          ],
+        ),
+      ),
+
+      body: TabBarView(
+        controller: _tabCtrl,
+        children: [
+          // ══ Tab 1: PIZZAS ══════════════════════════════════════
+          Column(children: [
+            Container(
+              color: Colors.red[800],
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: const Row(children: [
+                Icon(Icons.local_fire_department,
+                    color: Colors.orange, size: 16),
+                SizedBox(width: 6),
+                Expanded(child: Text(
+                    'Masa artesanal horneada al leño · Ingredientes frescos',
+                    style: TextStyle(
+                        color: Colors.white70, fontSize: 11))),
+              ]),
+            ),
+            // Filtros pizza
+            _FiltroBar(
+              categorias: _categoriasPizza,
+              seleccionada: _categoriaPizza,
+              color: Colors.red[700]!,
+              onCambio: (c) => setState(() => _categoriaPizza = c),
+            ),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(12),
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisExtent: 320,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: _pizzasFiltradas.length,
+                itemBuilder: (context, i) =>
+                    _PizzaCard(pizza: _pizzasFiltradas[i]),
+              ),
+            ),
+          ]),
+
+          // ══ Tab 2: BEBIDAS ═════════════════════════════════════
+          Column(children: [
+            Container(
+              color: Colors.teal[700],
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+              child: const Row(children: [
+                Icon(Icons.local_drink, color: Colors.white70, size: 16),
+                SizedBox(width: 6),
+                Expanded(child: Text(
+                    'Bebidas frías y calientes · Opciones bolivianas y clásicas',
+                    style: TextStyle(
+                        color: Colors.white70, fontSize: 11))),
+              ]),
+            ),
+            // Filtros bebida
+            _FiltroBar(
+              categorias: _categoriasBebida,
+              seleccionada: _categoriaBebida,
+              color: Colors.teal[700]!,
+              onCambio: (c) => setState(() => _categoriaBebida = c),
+            ),
+            // StreamBuilder de bebidas desde Firestore
+            Expanded(
+              child: StreamBuilder<List<BebidaDB>>(
+                stream: BebidaService.stream(),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(
+                        color: Colors.teal));
+                  }
+                  // Si Firestore falla, usar catálogo local
+                  final bebidasDB = snap.data ?? [];
+                  final bebidas = bebidasDB.isNotEmpty
+                      ? bebidasDB.map((b) => b.toBebida()).toList()
+                      : menuBebidas;
+
+                  final filtradas = _categoriaBebida == 'Todas'
+                      ? bebidas
+                      : bebidas
+                          .where((b) => b.categoria == _categoriaBebida)
+                          .toList();
+
+                  if (filtradas.isEmpty) {
+                    return const Center(child: Text(
+                        'Sin bebidas en esta categoría 🥤',
+                        style: TextStyle(color: Colors.grey)));
+                  }
+
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisExtent: 290,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: filtradas.length,
+                    itemBuilder: (context, i) =>
+                        _BebidaCard(bebida: filtradas[i]),
+                  );
+                },
+              ),
+            ),
+          ]),
         ],
       ),
 
-      body: Column(children: [
-        Container(
-          color: Colors.red[800],
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-          child: const Row(children: [
-            Icon(Icons.local_fire_department,
-                color: Colors.orange, size: 18),
-            SizedBox(width: 6),
-            Expanded(child: Text(
-              'Masa artesanal horneada al leño · Ingredientes frescos cada día',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
-            )),
-          ]),
-        ),
-
-        // Filtros
-        Container(
-          color: Colors.white,
-          height: 48,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10, vertical: 8),
-            children: _categorias.map((cat) {
-              final sel = cat == _categoria;
-              return GestureDetector(
-                onTap: () => setState(() => _categoria = cat),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: sel ? Colors.red[700] : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: sel
-                            ? Colors.red[700]!
-                            : Colors.grey.shade300),
-                  ),
-                  child: Text(cat,
-                      style: TextStyle(
-                        color: sel ? Colors.white : Colors.grey[700],
-                        fontWeight: sel
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontSize: 13,
-                      )),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-
-        // Grid de pizzas
-        Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisExtent: 320,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: _filtradas.length,
-            itemBuilder: (context, i) =>
-                _PizzaCard(pizza: _filtradas[i]),
-          ),
-        ),
-      ]),
-
+      // Barra inferior carrito
       bottomNavigationBar: provider.carrito.isNotEmpty
           ? SafeArea(
               child: Padding(
@@ -374,7 +452,8 @@ class _MenuScreenState extends State<MenuScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[800],
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
@@ -401,7 +480,61 @@ class _MenuScreenState extends State<MenuScreen> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// Card de pizza
+// Barra de filtros reutilizable
+// ════════════════════════════════════════════════════════════════════════════
+
+class _FiltroBar extends StatelessWidget {
+  final List<String> categorias;
+  final String seleccionada;
+  final Color color;
+  final void Function(String) onCambio;
+  const _FiltroBar({
+    required this.categorias,
+    required this.seleccionada,
+    required this.color,
+    required this.onCambio,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+        color: Colors.white,
+        height: 46,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          children: categorias.map((cat) {
+            final sel = cat == seleccionada;
+            return GestureDetector(
+              onTap: () => onCambio(cat),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: sel ? color : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: sel ? color : Colors.grey.shade300),
+                ),
+                child: Text(cat,
+                    style: TextStyle(
+                      color: sel ? Colors.white : Colors.grey[700],
+                      fontWeight: sel
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      fontSize: 12,
+                    )),
+              ),
+            );
+          }).toList(),
+        ),
+      );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Card de Pizza
 // ════════════════════════════════════════════════════════════════════════════
 
 class _PizzaCard extends StatefulWidget {
@@ -452,12 +585,11 @@ class _PizzaCardState extends State<_PizzaCard> {
             child: CachedNetworkImage(
               imageUrl: widget.pizza.imageUrl,
               fit: BoxFit.cover,
-              fadeInDuration: const Duration(milliseconds: 300),
-              placeholder: (context, url) => Container(
+              placeholder: (c, u) => Container(
                   color: Colors.grey[200],
                   child: const Center(child: CircularProgressIndicator(
                       color: Colors.red, strokeWidth: 2))),
-              errorWidget: (context, url, error) => Container(
+              errorWidget: (c, u, e) => Container(
                   color: Colors.red[50],
                   child: const Center(child: Text('🍕',
                       style: TextStyle(fontSize: 48)))),
@@ -506,19 +638,16 @@ class _PizzaCardState extends State<_PizzaCard> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
-                          color: sel
-                              ? Colors.red[700] : Colors.grey[100],
+                          color: sel ? Colors.red[700] : Colors.grey[100],
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                              color: sel
-                                  ? Colors.red[700]!
+                              color: sel ? Colors.red[700]!
                                   : Colors.grey.shade300),
                         ),
                         child: Text(_abrev(t.nombre),
                             style: TextStyle(fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: sel
-                                    ? Colors.white
+                                color: sel ? Colors.white
                                     : Colors.grey[700])),
                       ),
                     );
@@ -532,8 +661,8 @@ class _PizzaCardState extends State<_PizzaCard> {
                     style: TextStyle(color: Colors.red[800],
                         fontWeight: FontWeight.bold, fontSize: 16)),
                 Text(_tamano.descripcion,
-                    style: TextStyle(
-                        fontSize: 9, color: Colors.grey[500])),
+                    style: TextStyle(fontSize: 9,
+                        color: Colors.grey[500])),
               ]),
               const Spacer(),
               cantidad == 0
@@ -564,25 +693,221 @@ class _PizzaCardState extends State<_PizzaCard> {
                           mainAxisAlignment:
                               MainAxisAlignment.spaceBetween,
                           children: [
-                        _Btn(
-                          icon: Icons.remove,
-                          color: Colors.red[100]!,
-                          iconColor: Colors.red[800]!,
-                          onTap: () => provider.quitarDelCarrito(
-                              '${widget.pizza.id}_${_tamano.nombre}'),
+                        _Btn(icon: Icons.remove, color: Colors.red[100]!,
+                            iconColor: Colors.red[800]!,
+                            onTap: () => provider.quitarDelCarrito(
+                                '${widget.pizza.id}_${_tamano.nombre}')),
+                        Text('$cantidad', style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16,
+                            color: Colors.red[800])),
+                        _Btn(icon: Icons.add, color: Colors.red[700]!,
+                            iconColor: Colors.white,
+                            onTap: () => provider.agregarAlCarrito(
+                                widget.pizza, _tamano)),
+                      ]),
+                    ),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Card de Bebida
+// ════════════════════════════════════════════════════════════════════════════
+
+class _BebidaCard extends StatefulWidget {
+  final Bebida bebida;
+  const _BebidaCard({required this.bebida});
+  @override
+  State<_BebidaCard> createState() => _BebidaCardState();
+}
+
+class _BebidaCardState extends State<_BebidaCard> {
+  TamanoBebida _tamano = tamanosBebida[1]; // Mediano por defecto
+
+  Color _catColor(String cat) {
+    switch (cat) {
+      case 'Gaseosas':  return Colors.red[600]!;
+      case 'Jugos':     return Colors.orange[700]!;
+      case 'Cafés':     return Colors.brown[600]!;
+      case 'Mates':     return Colors.green[700]!;
+      case 'Agua':      return Colors.blue[600]!;
+      case 'Cervezas':  return Colors.amber[700]!;
+      default:          return Colors.teal[700]!;
+    }
+  }
+
+  String _abrevTamano(String n) => const {
+    'Personal': '250ml',
+    'Mediano':  '500ml',
+    'Grande':   '1L',
+  }[n] ?? n;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<OrdenProvider>();
+    // Usar mismo provider pero con prefijo 'beb_' para distinguir de pizzas
+    final key      = 'beb_${widget.bebida.id}_${_tamano.nombre}';
+    final cantidad = provider.cantidadEnCarritoBebida(key);
+    final precio   = widget.bebida.precioConTamano(_tamano);
+
+    return Card(
+      elevation: 3,
+      shadowColor: Colors.black26,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+        Stack(children: [
+          SizedBox(
+            height: 130, width: double.infinity,
+            child: CachedNetworkImage(
+              imageUrl: widget.bebida.imageUrl,
+              fit: BoxFit.cover,
+              placeholder: (c, u) => Container(
+                  color: Colors.teal[50],
+                  child: const Center(child: Text('🥤',
+                      style: TextStyle(fontSize: 40)))),
+              errorWidget: (c, u, e) => Container(
+                  color: Colors.teal[50],
+                  child: const Center(child: Text('🥤',
+                      style: TextStyle(fontSize: 40)))),
+            ),
+          ),
+          Positioned(top: 8, left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                  color: _catColor(widget.bebida.categoria),
+                  borderRadius: BorderRadius.circular(10)),
+              child: Text(widget.bebida.categoria,
+                  style: const TextStyle(color: Colors.white,
+                      fontSize: 9, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ]),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+              Text(widget.bebida.nombre,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 2),
+              Text(widget.bebida.descripcion,
+                  style: TextStyle(fontSize: 10,
+                      color: Colors.grey[600], height: 1.3),
+                  maxLines: 2, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 8),
+
+              // Selector tamaño (solo si tieneTamanos)
+              if (widget.bebida.tieneTamanos)
+                SizedBox(
+                  height: 26,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: tamanosBebida.map((t) {
+                      final sel = t.nombre == _tamano.nombre;
+                      return GestureDetector(
+                        onTap: () => setState(() => _tamano = t),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          margin: const EdgeInsets.only(right: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: sel
+                                ? Colors.teal[700] : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                                color: sel ? Colors.teal[700]!
+                                    : Colors.grey.shade300),
+                          ),
+                          child: Text(_abrevTamano(t.nombre),
+                              style: TextStyle(fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: sel ? Colors.white
+                                      : Colors.grey[700])),
                         ),
-                        Text('$cantidad',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.red[800])),
-                        _Btn(
-                          icon: Icons.add,
-                          color: Colors.red[700]!,
-                          iconColor: Colors.white,
-                          onTap: () => provider.agregarAlCarrito(
-                              widget.pizza, _tamano),
+                      );
+                    }).toList(),
+                  ),
+                )
+              else
+                Container(
+                  height: 26,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Center(
+                    child: Text('Tamaño único',
+                        style: TextStyle(fontSize: 10,
+                            color: Colors.grey)),
+                  ),
+                ),
+
+              const SizedBox(height: 4),
+              Text('Bs. ${precio.toStringAsFixed(0)}',
+                  style: TextStyle(color: Colors.teal[700],
+                      fontWeight: FontWeight.bold, fontSize: 16)),
+              const Spacer(),
+
+              // Botón agregar / contador
+              cantidad == 0
+                  ? SizedBox(
+                      width: double.infinity, height: 34,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal[700],
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                         ),
+                        onPressed: () => provider
+                            .agregarBebidaAlCarrito(
+                                widget.bebida, _tamano),
+                        child: const Text('Agregar',
+                            style: TextStyle(color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    )
+                  : Container(
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: Colors.teal[50],
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: Colors.teal.shade200),
+                      ),
+                      child: Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                          children: [
+                        _Btn(icon: Icons.remove,
+                            color: Colors.teal[100]!,
+                            iconColor: Colors.teal[800]!,
+                            onTap: () =>
+                                provider.quitarDelCarrito(key)),
+                        Text('$cantidad', style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16,
+                            color: Colors.teal[800])),
+                        _Btn(icon: Icons.add,
+                            color: Colors.teal[700]!,
+                            iconColor: Colors.white,
+                            onTap: () => provider
+                                .agregarBebidaAlCarrito(
+                                    widget.bebida, _tamano)),
                       ]),
                     ),
             ]),

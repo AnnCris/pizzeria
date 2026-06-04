@@ -157,7 +157,7 @@ class _MesasScreenState extends State<MesasScreen> {
                     style: const TextStyle(fontSize: 11),
                   ),
                   value: esEvento,
-                  activeThumbColor: Colors.purple[700],
+                  activeColor: Colors.purple[700],
                   onChanged: (v) => setS(() {
                     esEvento  = v;
                     capacidad = v ? 10 : 4;
@@ -548,9 +548,10 @@ class _MesaCard extends StatelessWidget {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
+      // Usar sheetContext del builder para Navigator.pop correcto
+      builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
             left: 20, right: 20, top: 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(width: 40, height: 4,
@@ -558,11 +559,14 @@ class _MesaCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
           Text('Mesa ${mesa.numero}',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.bold)),
           if (mesa.etiqueta.isNotEmpty)
             Text(mesa.etiqueta,
                 style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-          Text('${mesa.capacidad} personas${mesa.esEvento ? ' · EVENTO' : ''}',
+          Text(
+              '${mesa.capacidad} personas'
+              '${mesa.esEvento ? ' · EVENTO' : ''}',
               style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 20),
           TextField(
@@ -576,26 +580,38 @@ class _MesaCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Row(children: [
-            _BtnEstado(label: '🟢 Libre', color: const Color(0xFF2E7D32),
-                onTap: () async {
-                  await provider.liberarMesa(mesa.id);
-                  if (context.mounted) Navigator.pop(context);
-                }),
+            _BtnEstado(
+              label: '🟢 Libre',
+              color: const Color(0xFF2E7D32),
+              onTap: () async {
+                Navigator.pop(sheetContext); // cerrar primero
+                await provider.liberarMesa(mesa.id);
+              },
+            ),
             const SizedBox(width: 8),
-            _BtnEstado(label: '🔴 Ocupada', color: const Color(0xFFC62828),
-                onTap: () async {
-                  await provider.actualizarEstado(mesa.id, 'ocupada',
-                      clienteNombre: nombreCtrl.text.trim());
-                  if (context.mounted) Navigator.pop(context);
-                }),
+            _BtnEstado(
+              label: '🔴 Ocupada',
+              color: const Color(0xFFC62828),
+              onTap: () async {
+                final nombre = nombreCtrl.text.trim();
+                Navigator.pop(sheetContext);
+                await provider.actualizarEstado(
+                    mesa.id, 'ocupada',
+                    clienteNombre: nombre);
+              },
+            ),
             const SizedBox(width: 8),
-            _BtnEstado(label: '💰 Cobrar', color: const Color(0xFFE65100),
-                onTap: () async {
-                  await provider.actualizarEstado(
-                      mesa.id, 'esperando_cuenta',
-                      clienteNombre: nombreCtrl.text.trim());
-                  if (context.mounted) Navigator.pop(context);
-                }),
+            _BtnEstado(
+              label: '💰 Cobrar',
+              color: const Color(0xFFE65100),
+              onTap: () async {
+                final nombre = nombreCtrl.text.trim();
+                Navigator.pop(sheetContext);
+                await provider.actualizarEstado(
+                    mesa.id, 'esperando_cuenta',
+                    clienteNombre: nombre);
+              },
+            ),
           ]),
           const SizedBox(height: 8),
           TextButton.icon(
@@ -603,8 +619,8 @@ class _MesaCard extends StatelessWidget {
             label: const Text('Eliminar mesa',
                 style: TextStyle(color: Colors.red)),
             onPressed: () async {
+              Navigator.pop(sheetContext);
               await provider.eliminarMesa(mesa.id);
-              if (context.mounted) Navigator.pop(context);
             },
           ),
           const SizedBox(height: 16),

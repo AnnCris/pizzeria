@@ -10,6 +10,7 @@ import 'reportes_screen.dart';
 import 'pizzas_admin_screen.dart';
 import 'qr_mesa_screen.dart';
 import '../cocina_screen.dart';
+import 'bebidas_admin_screen.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -228,6 +229,17 @@ class AdminScreen extends StatelessWidget {
                         MaterialPageRoute(
                             builder: (_) =>
                                 const UsuariosScreen())),
+                  ),
+                  _ModuloCard(
+                    emoji: '🥤',
+                    titulo: 'Bebidas',
+                    subtitulo: 'Gaseosas, cafés, jugos y más',
+                    gradiente: const [
+                      Color(0xFF00695C), Color(0xFF00897B)],
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const BebidasAdminScreen())),
                   ),
                   _ModuloCard(
                     emoji: '📱',

@@ -5,35 +5,24 @@ class OrdenService {
   static final _db = FirebaseFirestore.instance;
   static const _col = 'ordenes';
 
-  // Stream en tiempo real — todas las órdenes excepto entregadas
-  // IMPORTANTE: este query requiere un índice compuesto en Firestore.
-  // Si falla, usa streamTodasActivas() que no requiere índice.
+  // Stream de TODAS las órdenes — sin filtro de fecha ni whereNotIn
+  // para evitar necesidad de índices compuestos en Firestore.
+  // El proveedor filtra por fecha en el cliente.
   static Stream<List<Orden>> streamActivas() {
     return _db
         .collection(_col)
         .orderBy('hora', descending: true)
+        .limit(200) // máximo 200 órdenes en memoria
         .snapshots()
-        .map((s) => s.docs
-            .map(_fromDoc)
-            .where((o) => o.estado != 'entregada')
-            .toList())
-        .handleError((_) => <Orden>[]);
-  }
-
-  // Órdenes del día actual para reportes
-  static Stream<List<Orden>> streamHoy() {
-    final hoy   = DateTime.now();
-    final inicio = DateTime(hoy.year, hoy.month, hoy.day);
-    final fin    = inicio.add(const Duration(days: 1));
-    return _db
-        .collection(_col)
-        .where('hora',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(inicio))
-        .where('hora', isLessThan: Timestamp.fromDate(fin))
-        .orderBy('hora', descending: true)
-        .snapshots()
-        .map((s) => s.docs.map(_fromDoc).toList())
-        .handleError((_) => <Orden>[]);
+        .map((s) {
+          final hoy    = DateTime.now();
+          final inicio = DateTime(hoy.year, hoy.month, hoy.day);
+          return s.docs
+              .map(_fromDoc)
+              .where((o) => o.hora.isAfter(inicio))
+              .toList();
+        });
+        // SIN handleError — si falla que se vea el error real
   }
 
   // Stream de UNA orden por firestoreId — para EstadoPedidoScreen
@@ -45,34 +34,35 @@ class OrdenService {
         .map((doc) => doc.exists ? _fromDoc(doc) : null);
   }
 
-  // Crear orden en Firestore, retorna el firestoreId
+  // Crear orden — retorna firestoreId
   static Future<String> crear(Orden orden) async {
+    final hoy = orden.hora;
     final ref = await _db.collection(_col).add({
       'id':             orden.id,
       'mesa':           orden.mesa,
-      'hora':           Timestamp.fromDate(orden.hora),
+      'clienteNombre':  orden.clienteNombre,
+      'hora':           Timestamp.fromDate(hoy),
       'estado':         orden.estado,
       'notasGenerales': orden.notasGenerales,
       'total':          orden.total,
-      'fecha': '${orden.hora.year}-'
-          '${orden.hora.month.toString().padLeft(2, '0')}-'
-          '${orden.hora.day.toString().padLeft(2, '0')}',
-      'items': orden.items
-          .map((i) => {
-                'pizzaId':  i.pizzaId,
-                'nombre':   i.nombre,
-                'precio':   i.precio,
-                'tamano':   i.tamano,
-                'cantidad': i.cantidad,
-                'notas':    i.notas,
-                'subtotal': i.subtotal,
-              })
-          .toList(),
+      'fecha': '${hoy.year}-'
+          '${hoy.month.toString().padLeft(2, '0')}-'
+          '${hoy.day.toString().padLeft(2, '0')}',
+      'items': orden.items.map((i) => {
+        'pizzaId':  i.pizzaId,
+        'nombre':   i.nombre,
+        'precio':   i.precio,
+        'tamano':   i.tamano,
+        'cantidad': i.cantidad,
+        'notas':    i.notas,
+        'subtotal': i.subtotal,
+        'tipo':     i.tipo,
+      }).toList(),
     });
-    return ref.id; // ← firestoreId real
+    return ref.id;
   }
 
-  // Actualizar estado usando firestoreId
+  // Actualizar estado usando firestoreId real
   static Future<void> actualizarEstado(
       String firestoreId, String estado) =>
       _db.collection(_col).doc(firestoreId).update({
@@ -83,14 +73,24 @@ class OrdenService {
   static Orden _fromDoc(DocumentSnapshot doc) {
     final d        = doc.data() as Map<String, dynamic>;
     final itemsRaw = (d['items'] as List?) ?? [];
+    
+    // Parsear hora de forma segura
+    DateTime hora;
+    try {
+      hora = (d['hora'] as Timestamp).toDate();
+    } catch (_) {
+      hora = DateTime.now();
+    }
+
     return Orden(
-      id:             (d['id'] as String?) ??
+      id:             (d['id']             as String?) ??
                       doc.id.substring(0, 8).toUpperCase(),
       mesa:           (d['mesa']           as String?) ?? '',
-      hora:           (d['hora']           as Timestamp).toDate(),
+      clienteNombre:  (d['clienteNombre']  as String?) ?? '',
+      hora:           hora,
       estado:         (d['estado']         as String?) ?? 'pendiente',
       notasGenerales: (d['notasGenerales'] as String?) ?? '',
-      firestoreId:    doc.id,  // ← siempre el ID real de Firestore
+      firestoreId:    doc.id,
       items: itemsRaw.map((i) {
         final m = i as Map<String, dynamic>;
         return ItemOrden(
@@ -100,6 +100,7 @@ class OrdenService {
           tamano:   (m['tamano']   as String?) ?? '',
           cantidad: (m['cantidad'] as int?)    ?? 1,
           notas:    (m['notas']    as String?) ?? '',
+          tipo:     (m['tipo']     as String?) ?? 'pizza',
         );
       }).toList(),
     );

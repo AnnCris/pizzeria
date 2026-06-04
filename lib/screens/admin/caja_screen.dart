@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/orden_provider.dart';
+import '../../models/orden.dart';
 
 class CajaScreen extends StatefulWidget {
   const CajaScreen({super.key});
@@ -130,7 +131,7 @@ class _CajaScreenState extends State<CajaScreen>
     );
   }
 
-  void _confirmarCobro(BuildContext context, dynamic orden) {
+  void _confirmarCobro(BuildContext context, Orden orden) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -159,7 +160,7 @@ class _CajaScreenState extends State<CajaScreen>
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700]),
             onPressed: () {
-              context.read<OrdenProvider>().actualizarEstado(orden.id, 'entregada');
+              context.read<OrdenProvider>().actualizarEstado(orden.firestoreId, 'entregada');
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -175,7 +176,7 @@ class _CajaScreenState extends State<CajaScreen>
     );
   }
 
-  void _verDetalle(BuildContext context, dynamic orden) {
+  void _verDetalle(BuildContext context, Orden orden) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -278,7 +279,7 @@ class _TotalChip extends StatelessWidget {
 }
 
 class _OrdenCajaCard extends StatelessWidget {
-  final dynamic orden;
+  final Orden orden;
   final VoidCallback onCobrar, onVerDetalle;
   const _OrdenCajaCard({required this.orden, required this.onCobrar, required this.onVerDetalle});
 
@@ -343,7 +344,7 @@ class _OrdenCajaCard extends StatelessWidget {
 }
 
 class _OrdenCobradaCard extends StatelessWidget {
-  final dynamic orden;
+  final Orden orden;
   final VoidCallback onVerDetalle;
   const _OrdenCobradaCard({required this.orden, required this.onVerDetalle});
 

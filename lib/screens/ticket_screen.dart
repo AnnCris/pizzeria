@@ -311,6 +311,12 @@ class _TicketScreenState extends State<TicketScreen> {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// Pantalla de confirmación — se muestra DESPUÉS de confirmar el pedido
+// Separada del TicketScreen para evitar problemas de context/navigation
+// ════════════════════════════════════════════════════════════════════════════
+
+
 // Función global — usada por _ConfirmacionScreen para imprimir
 Future<void> imprimirTicket(Orden orden) async {
   final pdf     = pw.Document();
@@ -327,6 +333,9 @@ Future<void> imprimirTicket(Orden orden) async {
         pw.Divider(),
         pw.Text('Orden: #${orden.id}',
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        if (orden.clienteNombre.isNotEmpty)
+          pw.Text('Cliente: ${orden.clienteNombre}',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
         pw.Text(orden.mesa),
         pw.Text('Fecha: ${formato.format(orden.hora)}'),
         pw.Divider(),
@@ -418,7 +427,7 @@ class _ConfirmacionScreen extends StatelessWidget {
               style: TextStyle(color: Colors.grey, fontSize: 15)),
           const SizedBox(height: 28),
 
-          // Card con datos de la orden
+          // Card con datos de la orden — incluye nombre del cliente
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -429,6 +438,27 @@ class _ConfirmacionScreen extends StatelessWidget {
                   color: Colors.black12, blurRadius: 10)],
             ),
             child: Column(children: [
+              // Nombre del cliente
+              if (orden.clienteNombre.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 10, horizontal: 14),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.person,
+                        color: Colors.blue, size: 20),
+                    const SizedBox(width: 8),
+                    Text(orden.clienteNombre,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16)),
+                  ]),
+                ),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                 const Text('Orden',
@@ -438,7 +468,7 @@ class _ConfirmacionScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold, fontSize: 18,
                         letterSpacing: 1.5)),
               ]),
-              const Divider(height: 20),
+              const Divider(height: 16),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                 const Text('Mesa',
@@ -456,7 +486,7 @@ class _ConfirmacionScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold, fontSize: 18)),
               ]),
               if (orden.notasGenerales.isNotEmpty) ...[
-                const Divider(height: 20),
+                const Divider(height: 16),
                 Row(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   const Text('📝 ', style: TextStyle(fontSize: 16)),
