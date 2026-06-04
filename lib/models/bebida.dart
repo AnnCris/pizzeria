@@ -23,7 +23,7 @@ class Bebida {
   final double precioBase;
   final String imageUrl;
   final String categoria;
-  final bool tieneTamanos; // false = precio único (ej: café)
+  final bool tieneTamanos; 
 
   const Bebida({
     required this.id,
@@ -42,7 +42,6 @@ class Bebida {
 }
 
 const List<Bebida> menuBebidas = [
-  // ── Gaseosas ──────────────────────────────────────────────────────────────
   Bebida(
     id: 'b01', nombre: 'Coca-Cola', categoria: 'Gaseosas',
     descripcion: 'Refresco de cola clásico, bien frío',
@@ -74,7 +73,6 @@ const List<Bebida> menuBebidas = [
     imageUrl: 'https://images.unsplash.com/photo-1543253687-c931c8e01820?w=400&q=80',
   ),
 
-  // ── Jugos ─────────────────────────────────────────────────────────────────
   Bebida(
     id: 'b06', nombre: 'Jugo de Naranja Natural', categoria: 'Jugos',
     descripcion: 'Exprimido al momento con naranjas frescas bolivianas',
@@ -100,7 +98,6 @@ const List<Bebida> menuBebidas = [
     imageUrl: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80',
   ),
 
-  // ── Cafés ─────────────────────────────────────────────────────────────────
   Bebida(
     id: 'b10', nombre: 'Café Americano', categoria: 'Cafés',
     descripcion: 'Café negro suave, perfecto para acompañar tu pizza',
@@ -120,7 +117,6 @@ const List<Bebida> menuBebidas = [
     imageUrl: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400&q=80',
   ),
 
-  // ── Mates ─────────────────────────────────────────────────────────────────
   Bebida(
     id: 'b13', nombre: 'Mate de Coca', categoria: 'Mates',
     descripcion: 'Infusión andina tradicional de hoja de coca, suave y natural',
@@ -140,7 +136,6 @@ const List<Bebida> menuBebidas = [
     imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&q=80',
   ),
 
-  // ── Agua ──────────────────────────────────────────────────────────────────
   Bebida(
     id: 'b16', nombre: 'Agua sin Gas', categoria: 'Agua',
     descripcion: 'Agua mineral pura boliviana',
@@ -154,7 +149,6 @@ const List<Bebida> menuBebidas = [
     imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80',
   ),
 
-  // ── Cervezas ──────────────────────────────────────────────────────────────
   Bebida(
     id: 'b18', nombre: 'Paceña', categoria: 'Cervezas',
     descripcion: 'Cerveza boliviana clásica, suave y refrescante',

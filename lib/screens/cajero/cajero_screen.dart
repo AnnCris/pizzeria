@@ -28,8 +28,6 @@ class _CajeroScreenState extends State<CajeroScreen>
   Widget build(BuildContext context) {
     final auth    = context.watch<AuthProvider>();
     final ordProv = context.watch<OrdenProvider>();
-
-    // Usar List<Orden> tipado — NO dynamic
     final List<Orden> todas   = ordProv.ordenes;
     final List<Orden> enCurso = todas.where((o) =>
         o.estado == 'pendiente' ||
@@ -97,7 +95,6 @@ class _CajeroScreenState extends State<CajeroScreen>
             controller: _tab,
             children: [
 
-              // ── Tab 1: LISTAS ──────────────────────────────────
               listas.isEmpty
                   ? const _EmptyTab(
                       emoji: '✅',
@@ -114,8 +111,6 @@ class _CajeroScreenState extends State<CajeroScreen>
                         onDetalle: () => _verDetalle(context, listas[i]),
                       ),
                     ),
-
-              // ── Tab 2: EN CURSO ────────────────────────────────
               enCurso.isEmpty
                   ? const _EmptyTab(
                       emoji: '🍕',
@@ -132,7 +127,6 @@ class _CajeroScreenState extends State<CajeroScreen>
                       ),
                     ),
 
-              // ── Tab 3: COBRADAS ────────────────────────────────
               cobradas.isEmpty
                   ? const _EmptyTab(
                       emoji: '💰',
@@ -181,9 +175,7 @@ class _CajeroScreenState extends State<CajeroScreen>
     );
   }
 
-  // ── COBRAR — usa Orden tipado con firestoreId garantizado ──────
   void _cobrar(BuildContext context, Orden orden) {
-    // Verificar que firestoreId no esté vacío
     if (orden.firestoreId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -253,8 +245,7 @@ class _CajeroScreenState extends State<CajeroScreen>
             style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green[700]),
             onPressed: () async {
-              Navigator.pop(context); // cerrar diálogo primero
-              // Llamar directamente con el firestoreId tipado
+              Navigator.pop(context);
               await context.read<OrdenProvider>()
                   .actualizarEstado(orden.firestoreId, 'entregada');
               if (context.mounted) {
@@ -372,10 +363,6 @@ class _CajeroScreenState extends State<CajeroScreen>
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets — todos usan Orden tipado, no dynamic
-// ════════════════════════════════════════════════════════════════════════════
-
 class _TotalChip extends StatelessWidget {
   final String label;
   final double valor;
@@ -407,7 +394,7 @@ class _TotalChip extends StatelessWidget {
 }
 
 class _OrdenListaCard extends StatelessWidget {
-  final Orden orden; // ← Orden tipado, no dynamic
+  final Orden orden;
   final VoidCallback onCobrar, onDetalle;
   const _OrdenListaCard({required this.orden,
       required this.onCobrar, required this.onDetalle});

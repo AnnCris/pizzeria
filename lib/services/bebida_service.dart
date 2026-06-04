@@ -46,7 +46,6 @@ class BebidaDB {
     'activo':       activo,
   };
 
-  // Convierte a Bebida para usar en el menú
   Bebida toBebida() => Bebida(
     id:           id,
     nombre:       nombre,
@@ -61,8 +60,6 @@ class BebidaDB {
 class BebidaService {
   static final _db  = FirebaseFirestore.instance;
   static const _col = 'bebidas';
-
-  // Stream en tiempo real — solo activas
   static Stream<List<BebidaDB>> stream() {
     return _db
         .collection(_col)

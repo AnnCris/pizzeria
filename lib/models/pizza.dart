@@ -40,7 +40,6 @@ class Pizza {
 }
 
 const List<Pizza> menuPizzas = [
-  // ── Clásicas ─────────────────────────────────────────────────────────────
   Pizza(
     id: 'p01', nombre: 'Margherita', categoria: 'Clásicas',
     ingredientes: 'Salsa de tomate natural, mozzarella fresca, hojas de albahaca y aceite de oliva virgen',
@@ -72,7 +71,6 @@ const List<Pizza> menuPizzas = [
     imageUrl: 'https://images.unsplash.com/photo-1555072956-7758afb20e8f?w=600&q=90',
   ),
 
-  // ── Especiales ────────────────────────────────────────────────────────────
   Pizza(
     id: 'p06', nombre: 'BBQ Pollo', categoria: 'Especiales',
     ingredientes: 'Salsa barbacoa casera, pollo a la parrilla, cebolla caramelizada, mozzarella y cilantro fresco',
@@ -122,7 +120,6 @@ const List<Pizza> menuPizzas = [
     imageUrl: 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=600&q=90',
   ),
 
-  // ── Vegana ────────────────────────────────────────────────────────────────
   Pizza(
     id: 'p14', nombre: 'Vegana Mediterránea', categoria: 'Vegana',
     ingredientes: 'Pesto de albahaca, pimiento asado, calabacín, berenjena, tomates cherry y aceitunas kalamata',
@@ -142,7 +139,6 @@ const List<Pizza> menuPizzas = [
     imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=90',
   ),
 
-  // ── Infantil ──────────────────────────────────────────────────────────────
   Pizza(
     id: 'p17', nombre: 'Niños Felices', categoria: 'Infantil',
     ingredientes: 'Salsa de tomate suave, mozzarella extra, pepperoni mini y maíz dulce — ¡sin picante!',
@@ -156,7 +152,6 @@ const List<Pizza> menuPizzas = [
     imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&q=90',
   ),
 
-  // ── Premium ───────────────────────────────────────────────────────────────
   Pizza(
     id: 'p19', nombre: 'Trufa Negra Premium', categoria: 'Premium',
     ingredientes: 'Crema de trufa negra, foie gras, champiñones silvestres, mozzarella de búfala y cebollín',

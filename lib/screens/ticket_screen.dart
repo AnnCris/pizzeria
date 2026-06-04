@@ -24,9 +24,6 @@ class _TicketScreenState extends State<TicketScreen> {
     super.dispose();
   }
 
-
-
-  // Lógica de confirmación en método separado del State
   Future<void> _confirmarOrden() async {
     setState(() => _enviando = true);
     final notas = _notasCtrl.text.trim();
@@ -36,9 +33,6 @@ class _TicketScreenState extends State<TicketScreen> {
           .confirmarOrden(notasGenerales: notas);
       if (!mounted) return;
 
-      // CORRECCIÓN: NO hacemos Navigator.pop aquí.
-      // Navegamos directamente a EstadoPedidoScreen reemplazando
-      // el TicketScreen en el stack, así no perdemos el context.
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -311,13 +305,6 @@ class _TicketScreenState extends State<TicketScreen> {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Pantalla de confirmación — se muestra DESPUÉS de confirmar el pedido
-// Separada del TicketScreen para evitar problemas de context/navigation
-// ════════════════════════════════════════════════════════════════════════════
-
-
-// Función global — usada por _ConfirmacionScreen para imprimir
 Future<void> imprimirTicket(Orden orden) async {
   final pdf     = pw.Document();
   final formato = DateFormat('dd/MM/yyyy HH:mm');
@@ -427,7 +414,7 @@ class _ConfirmacionScreen extends StatelessWidget {
               style: TextStyle(color: Colors.grey, fontSize: 15)),
           const SizedBox(height: 28),
 
-          // Card con datos de la orden — incluye nombre del cliente
+          // Card con datos de la orden
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -517,7 +504,7 @@ class _ConfirmacionScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Botón Ver estado — navegación directa, sin problemas de context
+          // Botón Ver estado
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(

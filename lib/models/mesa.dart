@@ -1,12 +1,12 @@
 class Mesa {
   final String id;
   final int numero;
-  String estado; // libre | ocupada | esperando_cuenta
+  String estado;
   String clienteNombre;
   int capacidad;
   String? ordenId;
-  bool esEvento;      // mesa especial para eventos
-  String etiqueta;    // nombre descriptivo ej: "Salón VIP", "Terraza"
+  bool esEvento;     
+  String etiqueta;  
 
   Mesa({
     required this.id,

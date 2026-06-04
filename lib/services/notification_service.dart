@@ -34,7 +34,6 @@ class NotificationService {
     _iniciado = true;
   }
 
-  // ── Notificación de nueva orden ──────────────────────────────────────────
   Future<void> nuevaOrden({
     required String ordenId,
     required String mesa,
@@ -72,7 +71,6 @@ class NotificationService {
     );
   }
 
-  // ── Notificación de orden lista para entregar ────────────────────────────
   Future<void> ordenLista({
     required String ordenId,
     required String mesa,
@@ -104,14 +102,12 @@ class NotificationService {
 
   Future<void> _reproducirSonido({String tipo = 'nueva'}) async {
     try {
-      // Usa un sonido del sistema — no necesita archivo extra
       await _player.play(
         tipo == 'nueva'
             ? AssetSource('sounds/new_order.mp3')
             : AssetSource('sounds/order_ready.mp3'),
       );
     } catch (_) {
-      // Si no existe el archivo de sonido, ignora silenciosamente
     }
   }
 

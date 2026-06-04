@@ -60,17 +60,15 @@ class PizzaService {
     return _db
         .collection(_col)
         .where('activo', isEqualTo: true)
-        // Sin .orderBy() aquí → no necesita índice compuesto
         .snapshots()
         .map((s) {
           final lista = s.docs.map(PizzaDB.fromFirestore).toList();
-          // Ordenar por categoría en memoria
           lista.sort((a, b) => a.categoria.compareTo(b.categoria));
           return lista;
         });
   }
 
-  // ── Crear ─────────────────────────────────────────────────────────────
+
   static Future<String?> crear(PizzaDB pizza) async {
     try {
       await _db.collection(_col).add(pizza.toMap());
@@ -80,7 +78,7 @@ class PizzaService {
     }
   }
 
-  // ── Actualizar ────────────────────────────────────────────────────────
+
   static Future<String?> actualizar(String id, PizzaDB pizza) async {
     try {
       await _db.collection(_col).doc(id).update(pizza.toMap());
@@ -90,7 +88,6 @@ class PizzaService {
     }
   }
 
-  // ── Eliminar (soft delete) ────────────────────────────────────────────
   static Future<String?> eliminar(String id) async {
     try {
       await _db.collection(_col).doc(id).update({'activo': false});
@@ -99,8 +96,6 @@ class PizzaService {
       return _mensajeError(e);
     }
   }
-
-  // ── Subir pizzas iniciales ────────────────────────────────────────────
   static Future<String?> subirPizzasIniciales() async {
     try {
       final snap = await _db.collection(_col).limit(1).get();
@@ -132,7 +127,6 @@ class PizzaService {
     }
   }
 
-  // ── Mensaje de error legible ──────────────────────────────────────────
   static String _mensajeError(dynamic e) {
     final msg = e.toString().toLowerCase();
     if (msg.contains('permission-denied') || msg.contains('permission denied')) {

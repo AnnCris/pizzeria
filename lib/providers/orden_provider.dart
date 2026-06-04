@@ -21,11 +21,10 @@ class OrdenProvider extends ChangeNotifier {
   double get totalCarrito =>
       _carrito.fold(0, (s, i) => s + i.subtotal);
 
-  // Solo las que NO están entregadas (para cocina/admin)
+
   List<Orden> get ordenesActivas =>
       _ordenes.where((o) => o.estado != 'entregada').toList();
 
-  // Solo entregadas del día (para caja — tab cobradas)
   List<Orden> get ordenesEntregadas =>
       _ordenes.where((o) => o.estado == 'entregada').toList();
 
@@ -50,7 +49,6 @@ class OrdenProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Pizzas ────────────────────────────────────────────────────
   void agregarAlCarrito(Pizza pizza, TamanoPizza tamano) {
     final key   = '${pizza.id}_${tamano.nombre}';
     final index = _carrito.indexWhere((i) => i.pizzaId == key);
@@ -68,7 +66,6 @@ class OrdenProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Bebidas ───────────────────────────────────────────────────
   void agregarBebidaAlCarrito(Bebida bebida, TamanoBebida tamano) {
     final key   = 'beb_${bebida.id}_${tamano.nombre}';
     final index = _carrito.indexWhere((i) => i.pizzaId == key);
@@ -138,7 +135,6 @@ class OrdenProvider extends ChangeNotifier {
   Future<void> actualizarEstado(
       String firestoreId, String estado) async {
     await OrdenService.actualizarEstado(firestoreId, estado);
-    // El stream actualiza _ordenes automáticamente
   }
 
   Orden? buscarPorFirestoreId(String fid) {

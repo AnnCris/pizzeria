@@ -49,7 +49,6 @@ class UsuariosScreen extends StatelessWidget {
     );
   }
 
-  // ── Diálogo crear ────────────────────────────────────────────────────────
   void _dialogCrear(BuildContext context) {
     final nombreCtrl = TextEditingController();
     final emailCtrl  = TextEditingController();
@@ -166,7 +165,6 @@ class UsuariosScreen extends StatelessWidget {
     );
   }
 
-  // ── Diálogo editar ───────────────────────────────────────────────────────
   void _dialogEditar(BuildContext context, UsuarioDB u) {
     final nombreCtrl = TextEditingController(text: u.nombre);
     String rol    = u.rol;
@@ -187,7 +185,7 @@ class UsuariosScreen extends StatelessWidget {
             _Campo(ctrl: nombreCtrl, label: 'Nombre completo',
                 icono: Icons.person),
             const SizedBox(height: 12),
-            // Email — solo lectura
+            // Email 
             Container(
               padding: const EdgeInsets.symmetric(
                   horizontal: 12, vertical: 14),
@@ -262,7 +260,6 @@ class UsuariosScreen extends StatelessWidget {
     );
   }
 
-  // ── Confirmar eliminar ───────────────────────────────────────────────────
   void _confirmarEliminar(BuildContext context, UsuarioDB u) {
     showDialog(
       context: context,
@@ -318,10 +315,6 @@ class UsuariosScreen extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Card de usuario
-// ════════════════════════════════════════════════════════════════════════════
 
 class _UsuarioCard extends StatelessWidget {
   final UsuarioDB usuario;
@@ -418,10 +411,6 @@ class _UsuarioCard extends StatelessWidget {
         ),
       );
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets reutilizables
-// ════════════════════════════════════════════════════════════════════════════
 
 class _Campo extends StatefulWidget {
   final TextEditingController ctrl;

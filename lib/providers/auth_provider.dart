@@ -41,13 +41,13 @@ class AuthProvider extends ChangeNotifier {
           .get();
 
       if (doc.exists && doc.data() != null) {
-        // Lee exactamente el campo 'rol' de Firestore
+        
         final data = doc.data()!;
         _rol    = (data['rol']    as String?) ?? 'cajero';
         _nombre = (data['nombre'] as String?) ??
             FirebaseAuth.instance.currentUser?.email ?? 'Usuario';
       } else {
-        // Usuario no tiene documento en Firestore — asumir cajero
+        
         _rol    = 'cajero';
         _nombre = FirebaseAuth.instance.currentUser?.email ?? 'Usuario';
       }
@@ -62,7 +62,7 @@ class AuthProvider extends ChangeNotifier {
       final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: email.trim(), password: password.trim());
 
-      // Esperar a que se carguen los datos del rol
+      
       if (cred.user != null) {
         await _cargarDatos(cred.user!.uid);
         _uid = cred.user!.uid;

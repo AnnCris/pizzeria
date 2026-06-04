@@ -60,7 +60,6 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
-    // Login exitoso → ir al panel correcto según el rol
     final rol = context.read<AuthProvider>().rol;
     Widget destino;
 
@@ -78,8 +77,6 @@ class _LoginScreenState extends State<LoginScreen>
         destino = const AdminScreen();
     }
 
-    // pop: cierra el LoginScreen → vuelve al MenuScreen
-    // push del panel: stack = MenuScreen → PanelScreen
     if (!mounted) return;
     Navigator.pop(context);
     if (!mounted) return;
@@ -107,7 +104,6 @@ class _LoginScreenState extends State<LoginScreen>
                 padding: const EdgeInsets.all(28),
                 child: Column(children: [
 
-                  // ── Botón volver (arriba a la izquierda) ──────────
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
@@ -121,7 +117,6 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                   const SizedBox(height: 10),
 
-                  // ── Logo ──────────────────────────────────────────
                   Container(
                     width: 100, height: 100,
                     decoration: BoxDecoration(
@@ -144,7 +139,6 @@ class _LoginScreenState extends State<LoginScreen>
                           fontSize: 13)),
                   const SizedBox(height: 32),
 
-                  // ── Card de login ──────────────────────────────────
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -230,7 +224,6 @@ class _LoginScreenState extends State<LoginScreen>
 
                   const SizedBox(height: 20),
 
-                  // ── Credenciales de prueba ─────────────────────────
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(

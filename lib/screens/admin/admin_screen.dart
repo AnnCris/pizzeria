@@ -27,12 +27,10 @@ class AdminScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF5F0EB),
       body: CustomScrollView(slivers: [
 
-        // ── AppBar ────────────────────────────────────────────────
         SliverAppBar(
           expandedHeight: 170,
           pinned: true,
           backgroundColor: Colors.red[800],
-          // La flecha back lleva al menú del cliente automáticamente
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new,
                 color: Colors.white),
@@ -132,7 +130,6 @@ class AdminScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(children: [
 
-              // ── KPIs ───────────────────────────────────────────
               Row(children: [
                 _KpiCard(valor: '${mesas.libres}',
                     label: 'Mesas libres', emoji: '🟢',
@@ -156,7 +153,6 @@ class AdminScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // ── Grid de módulos ────────────────────────────────
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -273,10 +269,6 @@ class AdminScreen extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets
-// ════════════════════════════════════════════════════════════════════════════
 
 class _KpiCard extends StatelessWidget {
   final String valor, label, emoji;

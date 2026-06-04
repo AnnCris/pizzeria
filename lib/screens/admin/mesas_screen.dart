@@ -80,7 +80,6 @@ class _MesasScreenState extends State<MesasScreen> {
     );
   }
 
-  // Dialog único para crear Y editar mesa
   void _dialogMesa(BuildContext context, Mesa? mesaExistente) {
     final provider  = context.read<MesaProvider>();
     final esEdicion = mesaExistente != null;
@@ -157,7 +156,7 @@ class _MesasScreenState extends State<MesasScreen> {
                     style: const TextStyle(fontSize: 11),
                   ),
                   value: esEvento,
-                  activeColor: Colors.purple[700],
+                  activeThumbColor: Colors.purple[700],
                   onChanged: (v) => setS(() {
                     esEvento  = v;
                     capacidad = v ? 10 : 4;
@@ -275,10 +274,6 @@ class _MesasScreenState extends State<MesasScreen> {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets
-// ════════════════════════════════════════════════════════════════════════════
 
 class _FiltroBar extends StatelessWidget {
   final String filtroActual;
@@ -584,7 +579,7 @@ class _MesaCard extends StatelessWidget {
               label: '🟢 Libre',
               color: const Color(0xFF2E7D32),
               onTap: () async {
-                Navigator.pop(sheetContext); // cerrar primero
+                Navigator.pop(sheetContext); 
                 await provider.liberarMesa(mesa.id);
               },
             ),

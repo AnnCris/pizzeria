@@ -54,7 +54,6 @@ class _CajaScreenState extends State<CajaScreen>
         ),
       ),
       body: Column(children: [
-        // ── Banner totales ──────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(16),
           child: Row(children: [
@@ -70,7 +69,6 @@ class _CajaScreenState extends State<CajaScreen>
           child: TabBarView(
             controller: _tab,
             children: [
-              // ── Tab: Por cobrar ─────────────────────────────────
               pendCobro.isEmpty
                   ? const Center(child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -90,7 +88,6 @@ class _CajaScreenState extends State<CajaScreen>
                       ),
                     ),
 
-              // ── Tab: Cobradas ────────────────────────────────────
               cobradas.isEmpty
                   ? const Center(child: Text('Sin cobros registrados aún',
                       style: TextStyle(color: Colors.grey)))
@@ -106,7 +103,6 @@ class _CajaScreenState extends State<CajaScreen>
           ),
         ),
 
-        // ── Botón cierre de caja ─────────────────────────────────
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -249,10 +245,6 @@ class _CajaScreenState extends State<CajaScreen>
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets
-// ════════════════════════════════════════════════════════════════════════════
 
 class _TotalChip extends StatelessWidget {
   final String label;

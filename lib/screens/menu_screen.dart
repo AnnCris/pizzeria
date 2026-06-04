@@ -54,7 +54,6 @@ class _MenuScreenState extends State<MenuScreen>
     super.dispose();
   }
 
-  // ── Diálogo de mesa ───────────────────────────────────────────
   final _nombreCtrl = TextEditingController();
 
   void _dialMesa() {
@@ -131,18 +130,13 @@ class _MenuScreenState extends State<MenuScreen>
     final ordenProv = context.read<OrdenProvider>();
     final mp        = context.read<MesaProvider>();
 
-    // 1. Guardar en el provider local para el ticket
     ordenProv.setMesa(mesaLabel);
     ordenProv.setClienteNombre(clienteLabel);
 
-    // 2. Marcar ocupada en Firestore — el método busca por número
-    //    directamente en Firestore, no depende de que el provider
-    //    haya terminado de cargar
     try {
       final numInt = int.parse(numero);
       await mp.marcarOcupadaPorNumero(numInt, clienteLabel);
     } catch (_) {
-      // Si falla no bloqueamos al cliente
     }
   }
 
@@ -242,7 +236,6 @@ class _MenuScreenState extends State<MenuScreen>
               ),
           ]),
 
-          // Sin sesión → Personal
           if (!auth.isLoggedIn)
             TextButton.icon(
               onPressed: _irAlLogin,
@@ -320,7 +313,6 @@ class _MenuScreenState extends State<MenuScreen>
           const SizedBox(width: 4),
         ],
 
-        // ── Tabs Pizzas / Bebidas ──────────────────────────────
         bottom: TabBar(
           controller: _tabCtrl,
           indicatorColor: Colors.white,
@@ -337,7 +329,6 @@ class _MenuScreenState extends State<MenuScreen>
       body: TabBarView(
         controller: _tabCtrl,
         children: [
-          // ══ Tab 1: PIZZAS ══════════════════════════════════════
           Column(children: [
             Container(
               color: Colors.red[800],
@@ -376,7 +367,6 @@ class _MenuScreenState extends State<MenuScreen>
             ),
           ]),
 
-          // ══ Tab 2: BEBIDAS ═════════════════════════════════════
           Column(children: [
             Container(
               color: Colors.teal[700],
@@ -479,10 +469,6 @@ class _MenuScreenState extends State<MenuScreen>
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Barra de filtros reutilizable
-// ════════════════════════════════════════════════════════════════════════════
-
 class _FiltroBar extends StatelessWidget {
   final List<String> categorias;
   final String seleccionada;
@@ -532,10 +518,6 @@ class _FiltroBar extends StatelessWidget {
         ),
       );
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Card de Pizza
-// ════════════════════════════════════════════════════════════════════════════
 
 class _PizzaCard extends StatefulWidget {
   final Pizza pizza;
@@ -714,10 +696,6 @@ class _PizzaCardState extends State<_PizzaCard> {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Card de Bebida
-// ════════════════════════════════════════════════════════════════════════════
-
 class _BebidaCard extends StatefulWidget {
   final Bebida bebida;
   const _BebidaCard({required this.bebida});
@@ -726,7 +704,7 @@ class _BebidaCard extends StatefulWidget {
 }
 
 class _BebidaCardState extends State<_BebidaCard> {
-  TamanoBebida _tamano = tamanosBebida[1]; // Mediano por defecto
+  TamanoBebida _tamano = tamanosBebida[1];
 
   Color _catColor(String cat) {
     switch (cat) {
@@ -863,7 +841,6 @@ class _BebidaCardState extends State<_BebidaCard> {
                       fontWeight: FontWeight.bold, fontSize: 16)),
               const Spacer(),
 
-              // Botón agregar / contador
               cantidad == 0
                   ? SizedBox(
                       width: double.infinity, height: 34,

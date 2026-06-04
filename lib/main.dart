@@ -36,7 +36,7 @@ class PizzeriaApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
         useMaterial3: true,
       ),
-      home: const MenuScreen(), // El cliente siempre ve el menú primero
+      home: const MenuScreen(),
     );
   }
 }

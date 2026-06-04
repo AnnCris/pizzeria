@@ -322,10 +322,6 @@ class BebidasAdminScreen extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Card de bebida
-// ════════════════════════════════════════════════════════════════════════════
-
 class _BebidaAdminCard extends StatelessWidget {
   final BebidaDB bebida;
   final VoidCallback onEditar, onEliminar;
@@ -442,10 +438,6 @@ class _BebidaAdminCard extends StatelessWidget {
         ]),
       );
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets helper
-// ════════════════════════════════════════════════════════════════════════════
 
 class _Campo extends StatelessWidget {
   final TextEditingController ctrl;

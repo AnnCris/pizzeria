@@ -32,12 +32,10 @@ class SplashScreen extends StatelessWidget {
       );
     }
 
-    // Sin sesión → pantalla de login (NO al menú de cliente)
     if (!auth.isLoggedIn) {
       return const LoginScreen();
     }
 
-    // Con sesión → redirigir según rol
     switch (auth.rol) {
       case 'admin':
         return const AdminScreen();

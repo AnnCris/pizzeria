@@ -57,7 +57,6 @@ class _CocinaScreenState extends State<CocinaScreen>
     });
   }
 
-  // Actualiza usando firestoreId — CORRECCIÓN PRINCIPAL
   Future<void> _cambiarEstado(Orden orden, String nuevoEstado) async {
     await context.read<OrdenProvider>()
         .actualizarEstado(orden.firestoreId, nuevoEstado);
@@ -105,7 +104,6 @@ class _CocinaScreenState extends State<CocinaScreen>
         ),
         child: SafeArea(child: Column(children: [
 
-          // Banner nueva orden
           if (_mostrarBanner)
             SlideTransition(
               position: _bannerSlide,
@@ -135,7 +133,6 @@ class _CocinaScreenState extends State<CocinaScreen>
               ),
             ),
 
-          // AppBar
           _AppBarCocina(
             auth: auth,
             pendientes: pendientes.length,
@@ -144,7 +141,6 @@ class _CocinaScreenState extends State<CocinaScreen>
             pulseAnim: _pulseAnim,
           ),
 
-          // Lista de órdenes
           Expanded(
             child: todas.isEmpty
                 ? _EmptyState()
@@ -154,7 +150,6 @@ class _CocinaScreenState extends State<CocinaScreen>
                     itemBuilder: (_, i) => _OrdenCard(
                       orden: todas[i],
                       pulseAnim: _pulseAnim,
-                      // Pasamos el callback con firestoreId correcto
                       onCambiarEstado: _cambiarEstado,
                     ),
                   ),
@@ -164,10 +159,6 @@ class _CocinaScreenState extends State<CocinaScreen>
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// AppBar
-// ════════════════════════════════════════════════════════════════════════════
 
 class _AppBarCocina extends StatelessWidget {
   final AuthProvider auth;
@@ -192,7 +183,6 @@ class _AppBarCocina extends StatelessWidget {
       ),
       child: Column(children: [
         Row(children: [
-          // Botón volver al menú
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new,
                 color: Colors.white, size: 20),
@@ -212,7 +202,6 @@ class _AppBarCocina extends StatelessWidget {
           ])),
           _RelojVivo(),
           const SizedBox(width: 8),
-          // Botón cerrar sesión
           GestureDetector(
             onTap: () {
               auth.logout();
@@ -247,10 +236,6 @@ class _AppBarCocina extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Card de orden — recibe callback para cambiar estado
-// ════════════════════════════════════════════════════════════════════════════
 
 class _OrdenCard extends StatelessWidget {
   final Orden orden;
@@ -319,7 +304,6 @@ class _OrdenCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-          // Cabecera
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             decoration: BoxDecoration(
@@ -410,7 +394,6 @@ class _OrdenCard extends StatelessWidget {
             ]),
           ),
 
-          // Items
           Container(
             color: const Color(0xFFFFFBF5),
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
@@ -491,7 +474,6 @@ class _OrdenCard extends StatelessWidget {
             ),
           ),
 
-          // Nota general
           if (orden.notasGenerales.isNotEmpty)
             Container(
               color: const Color(0xFFFFFBF5),
@@ -513,13 +495,11 @@ class _OrdenCard extends StatelessWidget {
               ),
             ),
 
-          // Botones de acción
           Container(
             color: const Color(0xFFFFFBF5),
             padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
             child: Column(children: [
 
-              // Botón principal de cambio de estado
               orden.estado == 'lista'
                   ? Container(
                       width: double.infinity,
@@ -562,7 +542,6 @@ class _OrdenCard extends StatelessWidget {
                         style: const TextStyle(color: Colors.white,
                             fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-                      // USA firestoreId a través del callback
                       onPressed: () => onCambiarEstado(
                         orden,
                         orden.estado == 'pendiente'
@@ -572,7 +551,6 @@ class _OrdenCard extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // Botón ver estado del cliente
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 40),
@@ -585,7 +563,6 @@ class _OrdenCard extends StatelessWidget {
                 label: Text('Ver estado del cliente',
                     style: TextStyle(color: Colors.orange[700],
                         fontWeight: FontWeight.w600, fontSize: 13)),
-                // USA firestoreId directamente
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(
                       builder: (_) => EstadoPedidoScreen(
@@ -599,10 +576,6 @@ class _OrdenCard extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets auxiliares
-// ════════════════════════════════════════════════════════════════════════════
 
 class _RelojVivo extends StatefulWidget {
   @override

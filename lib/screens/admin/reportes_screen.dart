@@ -68,7 +68,6 @@ class _ReportesScreenState extends State<ReportesScreen>
       body: TabBarView(
         controller: _tab,
         children: [
-          // ── Tab 1: Resumen ───────────────────────────────────────
           _TabResumen(
             hoy: hoy,
             totalDia: totalDia,
@@ -79,20 +78,14 @@ class _ReportesScreenState extends State<ReportesScreen>
             entregadas: entregadas,
           ),
 
-          // ── Tab 2: Pizzas más vendidas ───────────────────────────
           _TabPizzas(topPizzas: topPizzas),
 
-          // ── Tab 3: Lista de órdenes con opciones CRUD ────────────
           _TabOrdenes(ordenes: ordenes),
         ],
       ),
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Tab Resumen
-// ════════════════════════════════════════════════════════════════════════════
 
 class _TabResumen extends StatelessWidget {
   final String hoy;
@@ -251,10 +244,6 @@ class _IngresosPorMesa extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Tab Pizzas
-// ════════════════════════════════════════════════════════════════════════════
-
 class _TabPizzas extends StatelessWidget {
   final List<MapEntry<String, int>> topPizzas;
   const _TabPizzas({required this.topPizzas});
@@ -325,10 +314,6 @@ class _TabPizzas extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Tab Órdenes con opciones CRUD
-// ════════════════════════════════════════════════════════════════════════════
-
 class _TabOrdenes extends StatelessWidget {
   final List<dynamic> ordenes;
   const _TabOrdenes({required this.ordenes});
@@ -366,7 +351,7 @@ class _TabOrdenes extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemCount: ordenes.length,
       itemBuilder: (_, i) {
-        final o = ordenes[ordenes.length - 1 - i]; // más recientes primero
+        final o = ordenes[ordenes.length - 1 - i]; 
         final color = _estadoColor(o.estado);
 
         return Container(
@@ -489,10 +474,6 @@ class _DetalleRow extends StatelessWidget {
         ]),
       );
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets reutilizables
-// ════════════════════════════════════════════════════════════════════════════
 
 class _StatCard extends StatelessWidget {
   final String valor, label, emoji;

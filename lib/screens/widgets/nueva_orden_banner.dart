@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Widget que se muestra en cocina cuando llega una orden nueva
-// Úsalo así en CocinaScreen: _NuevaOrdenBanner(visible: pendientes > _prevPendientes)
 class NuevaOrdenBanner extends StatefulWidget {
   final bool visible;
   final String mensaje;

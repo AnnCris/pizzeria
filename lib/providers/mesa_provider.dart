@@ -33,7 +33,6 @@ class MesaProvider extends ChangeNotifier {
     });
   }
 
-  // Crea 10 mesas iniciales solo si Firestore está vacío
   Future<void> crearMesasIniciales(int cantidad) async {
     await MesaService.crearMesasIniciales(cantidad);
   }
@@ -75,11 +74,8 @@ class MesaProvider extends ChangeNotifier {
     await MesaService.eliminar(id);
   }
 
-  // Busca una mesa por número — útil para marcarla ocupada
-  // desde menu_screen sin depender de que el provider haya cargado
   Future<void> marcarOcupadaPorNumero(
       int numero, String clienteNombre) async {
-    // Primero intentar desde la lista en memoria
     try {
       final mesa = _mesas.firstWhere((m) => m.numero == numero);
       await actualizarEstado(mesa.id, 'ocupada',
@@ -87,7 +83,6 @@ class MesaProvider extends ChangeNotifier {
       return;
     } catch (_) {}
 
-    // Si no está en memoria, buscar directamente en Firestore
     await MesaService.marcarOcupadaPorNumero(numero, clienteNombre);
   }
 }

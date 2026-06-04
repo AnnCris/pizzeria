@@ -3,7 +3,7 @@ class ItemOrden {
   final String nombre;
   final double precio;
   final String tamano;
-  final String tipo;     // 'pizza' | 'bebida'
+  final String tipo; 
   String notas;
   int cantidad;
 
@@ -22,10 +22,10 @@ class ItemOrden {
 }
 
 class Orden {
-  final String id;            // ID corto legible: "A3F8C2D1"
-  final String firestoreId;   // ID real de Firestore
+  final String id;            
+  final String firestoreId;  
   final String mesa;
-  final String clienteNombre; // Nombre del cliente
+  final String clienteNombre; 
   final DateTime hora;
   final List<ItemOrden> items;
   String estado;
@@ -49,7 +49,6 @@ class Orden {
   List<ItemOrden> get bebidas =>
       items.where((i) => i.tipo == 'bebida').toList();
 
-  // Etiqueta para mostrar en cocina/caja: "Ana · Mesa 3"
   String get etiquetaCliente {
     if (clienteNombre.isNotEmpty) return '$clienteNombre · $mesa';
     return mesa;

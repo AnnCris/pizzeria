@@ -54,13 +54,12 @@ class MesaService {
         });
       }
     } catch (_) {
-      // Si falla, ignorar — no bloquear al cliente
     }
   }
 
   static Future<void> crearMesasIniciales(int n) async {
     final snap = await _db.collection(_col).limit(1).get();
-    if (snap.docs.isNotEmpty) return; // ya existen
+    if (snap.docs.isNotEmpty) return;
     final batch = _db.batch();
     for (int i = 1; i <= n; i++) {
       final ref = _db.collection(_col).doc();

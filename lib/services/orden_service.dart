@@ -5,14 +5,11 @@ class OrdenService {
   static final _db = FirebaseFirestore.instance;
   static const _col = 'ordenes';
 
-  // Stream de TODAS las órdenes — sin filtro de fecha ni whereNotIn
-  // para evitar necesidad de índices compuestos en Firestore.
-  // El proveedor filtra por fecha en el cliente.
   static Stream<List<Orden>> streamActivas() {
     return _db
         .collection(_col)
         .orderBy('hora', descending: true)
-        .limit(200) // máximo 200 órdenes en memoria
+        .limit(200) 
         .snapshots()
         .map((s) {
           final hoy    = DateTime.now();
@@ -22,10 +19,8 @@ class OrdenService {
               .where((o) => o.hora.isAfter(inicio))
               .toList();
         });
-        // SIN handleError — si falla que se vea el error real
   }
 
-  // Stream de UNA orden por firestoreId — para EstadoPedidoScreen
   static Stream<Orden?> streamOrden(String firestoreId) {
     return _db
         .collection(_col)
@@ -34,7 +29,7 @@ class OrdenService {
         .map((doc) => doc.exists ? _fromDoc(doc) : null);
   }
 
-  // Crear orden — retorna firestoreId
+
   static Future<String> crear(Orden orden) async {
     final hoy = orden.hora;
     final ref = await _db.collection(_col).add({

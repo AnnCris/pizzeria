@@ -3,8 +3,6 @@ import 'package:intl/intl.dart';
 import '../models/orden.dart';
 import '../services/orden_service.dart';
 
-// Accesible SIN login — el cliente ve su pedido en tiempo real.
-// Recibe el firestoreId del documento en Firestore.
 class EstadoPedidoScreen extends StatelessWidget {
   final String firestoreId;
   const EstadoPedidoScreen({super.key, required this.firestoreId});
@@ -19,12 +17,10 @@ class EstadoPedidoScreen extends StatelessWidget {
         title: const Text('📍 Estado de tu pedido',
             style: TextStyle(color: Colors.white,
                 fontWeight: FontWeight.bold)),
-        // El cliente puede volver al menú con el botón back
       ),
       body: StreamBuilder<Orden?>(
         stream: OrdenService.streamOrden(firestoreId),
         builder: (context, snap) {
-          // Cargando
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -96,7 +92,6 @@ class EstadoPedidoScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(children: [
 
-              // ── Número de orden ────────────────────────────────
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -125,11 +120,9 @@ class EstadoPedidoScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // ── Stepper visual ─────────────────────────────────
               _EstadoStepper(estado: orden.estado),
               const SizedBox(height: 24),
 
-              // ── Mensaje especial según estado ──────────────────
               if (orden.estado == 'lista')
                 _BannerEstado(
                   emoji: '🎉',
@@ -160,7 +153,6 @@ class EstadoPedidoScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ── Detalle del pedido ─────────────────────────────
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -233,8 +225,6 @@ class EstadoPedidoScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // ── AVISO DE PAGO ──────────────────────────────────
-              // El pago se hace al RECIBIR el pedido, no antes
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
@@ -297,10 +287,6 @@ class EstadoPedidoScreen extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Widgets
-// ════════════════════════════════════════════════════════════════════════════
 
 class _BannerEstado extends StatelessWidget {
   final String emoji, titulo, subtitulo;
@@ -386,7 +372,6 @@ class _ItemRow extends StatelessWidget {
       );
 }
 
-// ── Stepper visual ────────────────────────────────────────────────────────
 
 class _EstadoStepper extends StatelessWidget {
   final String estado;
